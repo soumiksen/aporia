@@ -38,3 +38,20 @@
   (abort) and `hintEvent` (service worker -> tab stream relay).
 - Verdicts are only emitted from "check" responses with `state === "SUCCESS"`. Run vs submit is
   inferred from the check URL (`runcode` in the id). Unverified against the live site.
+- e2e mocks `POST /v1/hint` with a small Node SSE server (`e2e/mock-api.ts`, port 8765) instead
+  of `page.route`: the request is made by the service worker, which `page.route` does not see.
+  The dev build reads `VITE_API_URL` at build time and adds that origin to `host_permissions`
+  (development mode only). The fixture page, GraphQL and run/check calls are still mocked with
+  `context.route`.
+- The hint endpoint fails open on a Redis error in the rate limiter (logged, request allowed);
+  `/readyz` reports Redis health. `code` size is enforced in the endpoint (not Pydantic) so it
+  returns 413 as specified instead of 422.
+- The API serves level 1 behavior for any `level` 1..4 and reports `done.level = 1`.
+- Student code is kept out of Langfuse traces by default by turning off LiteLLM message logging
+  (`litellm.turn_off_message_logging`) unless `APORIA_TRACE_CODE=1`. This also hides the model
+  reply in traces until that flag is on.
+- shadcn's CLI misresolved WXT's `@/` alias (wrote to `apps/src` and added a stray `cn` package);
+  the Button was moved by hand and the import fixed. Future `shadcn add` runs need the same check.
+- Tailwind rem values are compiled to px by a small PostCSS plugin in `wxt.config.ts`, so the
+  host page's `html` font-size cannot rescale the panel (setting font-size on a container does
+  not change rem).

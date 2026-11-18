@@ -21,7 +21,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 1.6 API: hint endpoint and LLM gateway
 - [x] 1.7 Tracing
 - [x] 1.8 Wire the UI to the API
-- [ ] 1.9 End-to-end tests with synthetic fixtures
+- [x] 1.9 End-to-end tests with synthetic fixtures
 - [ ] 1.10 Manual checklist for the user
 
 ## Stage 2: Hint ladder and leak guard

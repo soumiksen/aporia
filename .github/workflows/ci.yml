@@ -30,6 +30,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+asyncpg://aporia:aporia@localhost:5432/aporia
       REDIS_URL: redis://localhost:6379/0
+      APORIA_LLM_MOCK: "1"
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -82,3 +83,21 @@ jobs:
       - run: uv --directory apps/api sync --frozen
       - run: pnpm gen:api
       - run: git diff --exit-code packages/shared
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter extension exec playwright install --with-deps chromium
+      - run: pnpm --filter extension e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/extension/playwright-report

@@ -1,6 +1,8 @@
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "wxt";
 
+const devApiUrl = process.env.VITE_API_URL ?? "http://localhost:8000";
+
 /** Compiles rem to px so the host page's html font-size cannot rescale the shadow-root UI. */
 function remToPx() {
   return {
@@ -30,7 +32,7 @@ export default defineConfig({
     // The local API is only reachable from development builds.
     host_permissions: [
       "https://leetcode.com/*",
-      ...(mode === "development" ? ["http://localhost:8000/*"] : []),
+      ...(mode === "development" ? [`${new URL(devApiUrl).origin}/*`] : []),
     ],
   }),
 });

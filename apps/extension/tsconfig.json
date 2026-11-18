@@ -4,5 +4,6 @@
     "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "strict": true
-  }
+  },
+  "include": ["./.wxt/wxt.d.ts", "src", "e2e", "*.config.ts", "vitest.setup.ts"]
 }

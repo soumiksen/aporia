@@ -1,0 +1,82 @@
+<!doctype html>
+<!-- Synthetic test page. Not a copy of LeetCode. -->
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Two Sum - Synthetic</title>
+  </head>
+  <body>
+    <div data-track-load="description_content">
+      <p>Synthetic statement: return indices of two numbers that add up to a target.</p>
+    </div>
+    <button id="run" type="button">Run</button>
+    <button id="goto-other" type="button">Next problem</button>
+    <script>
+      (function () {
+        var value = "class Solution:\n    def twoSum(self, nums, target):\n        return []";
+        var listeners = [];
+        var model = {
+          getValue: function () {
+            return value;
+          },
+          getLanguageId: function () {
+            return "python";
+          },
+          onDidChangeContent: function (cb) {
+            listeners.push(cb);
+            return {
+              dispose: function () {
+                listeners = listeners.filter(function (l) {
+                  return l !== cb;
+                });
+              },
+            };
+          },
+        };
+        window.monaco = {
+          editor: {
+            getEditors: function () {
+              return [
+                {
+                  getModel: function () {
+                    return model;
+                  },
+                  hasTextFocus: function () {
+                    return true;
+                  },
+                },
+              ];
+            },
+            getModels: function () {
+              return [model];
+            },
+          },
+        };
+        window.__setCode = function (next) {
+          value = next;
+          listeners.forEach(function (l) {
+            l({});
+          });
+        };
+        document.getElementById("run").addEventListener("click", function () {
+          fetch("/problems/two-sum/interpret_solution/", { method: "POST", body: "{}" })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (j) {
+              return fetch("/submissions/detail/" + j.interpret_id + "/check/");
+            })
+            .then(function (r) {
+              return r.json();
+            })
+            .then(function (j) {
+              window.__lastCheck = j;
+            });
+        });
+        document.getElementById("goto-other").addEventListener("click", function () {
+          history.pushState({}, "", "/problems/valid-anagram/");
+        });
+      })();
+    </script>
+  </body>
+</html>
