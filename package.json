@@ -1,0 +1,19 @@
+{
+  "name": "aporia",
+  "private": true,
+  "packageManager": "pnpm@12.21.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "build": "turbo run build",
+    "gen:api": "uv --project apps/api run python -m app.export_openapi packages/shared/openapi.json && pnpm --filter shared exec openapi-typescript openapi.json -o src/api.d.ts"
+  },
+  "devDependencies": {
+    "prettier": "^3.10.1",
+    "turbo": "^2.11.11"
+  }
+}
