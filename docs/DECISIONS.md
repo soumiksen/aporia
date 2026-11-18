@@ -28,3 +28,13 @@
   Stage 2 uses a `SandboxRunner` interface so another runner (or a Linux cgroup-v1 host)
   can be used.
 - Local Node is v26 (`.nvmrc` and CI use 22); local checks passed on 26 only.
+
+## Stage 1 implementation decisions (2026-11-17)
+- WXT `srcDir` is `src` so entrypoints live in `src/entrypoints/` as the stage plan states.
+- Both content scripts match `https://leetcode.com/*` (not only `/problems/*`). LeetCode is a
+  SPA: a script scoped to problem URLs would not be injected when the student navigates from the
+  problem list. The isolated script filters by URL with `MatchPattern` and `wxt:locationchange`.
+- The bridge protocol map has two extra messages beyond `getHint`/`getDeviceId`: `cancelHint`
+  (abort) and `hintEvent` (service worker -> tab stream relay).
+- Verdicts are only emitted from "check" responses with `state === "SUCCESS"`. Run vs submit is
+  inferred from the check URL (`runcode` in the id). Unverified against the live site.

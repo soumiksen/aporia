@@ -4,7 +4,6 @@ import {
   CODE_DEBOUNCE_MS,
   MONACO_POLL_INTERVAL_MS,
   MONACO_POLL_TIMEOUT_MS,
-  PROBLEM_MATCH_PATTERN,
 } from "../lib/leetcode/constants";
 import {
   modelLanguage,
@@ -44,8 +43,7 @@ function patchFetch(): void {
     const promise = original.apply(this, args);
     try {
       const input = args[0];
-      const url =
-        typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
       if (CHECK_URL_REGEX.test(url)) {
         promise
           .then((res) => res.clone().text())
@@ -116,7 +114,8 @@ function watchEditor(): void {
 }
 
 export default defineContentScript({
-  matches: [PROBLEM_MATCH_PATTERN],
+  // All of leetcode.com (SPA): the isolated script ignores messages when not on a problem page.
+  matches: ["https://leetcode.com/*"],
   world: "MAIN",
   runAt: "document_idle",
   main() {
