@@ -24,9 +24,13 @@ export default defineConfig({
     plugins: [tailwindcss()],
     css: { postcss: { plugins: [remToPx()] } },
   }),
-  manifest: {
+  manifest: ({ mode }) => ({
     name: "Aporia",
     permissions: ["storage"],
-    host_permissions: ["https://leetcode.com/*"],
-  },
+    // The local API is only reachable from development builds.
+    host_permissions: [
+      "https://leetcode.com/*",
+      ...(mode === "development" ? ["http://localhost:8000/*"] : []),
+    ],
+  }),
 });

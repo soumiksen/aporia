@@ -17,7 +17,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 1.2 MAIN-world bridge
 - [x] 1.3 Isolated content script, SPA navigation, problem metadata
 - [x] 1.4 Shadow DOM panel and mascot
-- [ ] 1.5 Service worker: device id, API client, streaming
+- [x] 1.5 Service worker: device id, API client, streaming
 - [ ] 1.6 API: hint endpoint and LLM gateway
 - [ ] 1.7 Tracing
 - [ ] 1.8 Wire the UI to the API
