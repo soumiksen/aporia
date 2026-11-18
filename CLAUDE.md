@@ -11,6 +11,7 @@ Stage plans: `docs/stages/stage0.md` to `stage6.md`. Work on one stage at a time
 - Dev API: `docker compose -f infra/docker-compose.yml up -d postgres redis` then `cd apps/api && uv run uvicorn app.main:app --reload`
 - Checks: `pnpm turbo run lint typecheck test build` ; `cd apps/api && uv run ruff check . && uv run pyright && uv run pytest`
 - Regenerate API types: `pnpm gen:api`
+- Extension e2e: `pnpm --filter extension e2e` (needs `npx playwright install chromium` once)
 
 ## Conventions
 - TypeScript strict, no `any`. Python fully typed, async, Pydantic v2.

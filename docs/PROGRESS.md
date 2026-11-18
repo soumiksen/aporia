@@ -22,7 +22,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 1.7 Tracing
 - [x] 1.8 Wire the UI to the API
 - [x] 1.9 End-to-end tests with synthetic fixtures
-- [ ] 1.10 Manual checklist for the user
+- [x] 1.10 Manual checklist for the user (written; **the user still has to run it**)
 
 ## Stage 2: Hint ladder and leak guard
 - [ ] (task IDs to be added from stage2.md)
@@ -65,3 +65,38 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - wxt ^0.21.3, react ^19.2.4, tailwindcss ^4.3.5, vitest ^5.1.0, zod ^4.6.7, typescript ^5.9.3
 - fastapi 0.163.2, pydantic 2.14.3, sqlalchemy 2.1.9, alembic 1.20.1, ruff 0.17.5,
   pyright 1.1.414, pytest 9.2.0
+
+## Stage 1 hand-off notes
+
+### Verified commands (2026-11-17)
+- `pnpm turbo run lint typecheck test build`: passes (extension: 40 Vitest tests).
+- `pnpm --filter extension e2e`: 4 Playwright tests pass (headless Chromium, synthetic fixture).
+- `cd apps/api && uv run ruff check . && uv run pyright && uv run pytest`: passes (19 tests, mock
+  mode, no network or keys).
+- Real API run with Docker Redis: SSE tokens then `done`; missing device header gives 400; the
+  31st request in a minute gives 429.
+
+### Verified only against synthetic fixtures (not the live site)
+- Monaco access (a fake `window.monaco`), verdict parsing (synthetic check JSON), GraphQL
+  metadata (synthetic response), SPA navigation (`history.pushState` in the fixture), and the
+  streamed hint (mock API). No real LLM call has been made; LiteLLM is tested with a stub.
+
+### Rive status
+- SVG fallback only. No `.riv` file exists in `apps/extension/src/assets/`, so `Mascot` is an
+  inline SVG with `mood` and `size` props and the `@rive-app/*` package is not installed.
+
+### LeetCode assumptions the user must confirm
+See the end of `docs/MANUAL_TESTS.md`: URL shapes, GraphQL access and shape, run/submit/check URLs
+and `state: "SUCCESS"`, run vs submit inference from `runcode` in the id, `window.monaco`
+availability and language ids, and the description fallback selector.
+
+### Notes
+- Both content scripts match all of `https://leetcode.com/*` (SPA injection); see DECISIONS.
+- Production builds have no API host permission yet; only dev builds include the API origin.
+  Set the production API URL and permission before release (Stage 6).
+- Judge0 remains unresolved on this host (see Stage 0 notes); not needed until Stage 2.
+- Not run on GitHub CI yet in this stage; the new `e2e` job is validated with actionlint only.
+
+### Versions added
+- extension: @webext-core/messaging, eventsource-parser, zustand, radix-ui, @playwright/test,
+  jsdom, @testing-library/*; api: litellm, langfuse (>=4.7,<5), fakeredis (dev).

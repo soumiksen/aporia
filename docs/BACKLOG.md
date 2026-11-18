@@ -20,3 +20,10 @@
    so that I can trust the tool.
 10. As a student stuck on a problem, I want to see which concepts I am weak at so that I know what
     to practise next.
+
+## Ideas parked during Stage 1
+- Mascot animation with Rive once a `.riv` asset is provided (props: mood, size).
+- Production API URL, host permission, and CORS policy for released builds.
+- Show the hint level and a "next hint" button in the panel (levels 2 to 4 come in Stage 2).
+- Surface the captured language id mapping (monaco ids vs LeetCode `python3`) in the request.
+- Dark mode for the panel (theme variables already live on `:host`).
