@@ -13,7 +13,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 0.7 Project memory and documentation
 
 ## Stage 1: Walking skeleton
-- [ ] 1.1 Constants and types
+- [x] 1.1 Constants and types
 - [ ] 1.2 MAIN-world bridge
 - [ ] 1.3 Isolated content script, SPA navigation, problem metadata
 - [ ] 1.4 Shadow DOM panel and mascot
