@@ -4,6 +4,9 @@
 /** Match pattern for problem pages. Verify on live site. */
 export const PROBLEM_MATCH_PATTERN = "https://leetcode.com/problems/*";
 
+/** Content scripts match all of leetcode.com (SPA navigation); URL filtering happens in code. */
+export const SITE_MATCH_PATTERN = "https://leetcode.com/*";
+
 /** Extracts the problem slug from a pathname. Verify on live site. */
 export const SLUG_FROM_PATH_REGEX = /^\/problems\/([a-z0-9-]+)(?:\/|$)/i;
 

@@ -4,6 +4,7 @@ import {
   CODE_DEBOUNCE_MS,
   MONACO_POLL_INTERVAL_MS,
   MONACO_POLL_TIMEOUT_MS,
+  SITE_MATCH_PATTERN,
 } from "../lib/leetcode/constants";
 import {
   modelLanguage,
@@ -115,7 +116,7 @@ function watchEditor(): void {
 
 export default defineContentScript({
   // All of leetcode.com (SPA): the isolated script ignores messages when not on a problem page.
-  matches: ["https://leetcode.com/*"],
+  matches: [SITE_MATCH_PATTERN],
   world: "MAIN",
   runAt: "document_idle",
   main() {

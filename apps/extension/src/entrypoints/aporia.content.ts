@@ -1,4 +1,4 @@
-import { PROBLEM_MATCH_PATTERN } from "../lib/leetcode/constants";
+import { PROBLEM_MATCH_PATTERN, SITE_MATCH_PATTERN } from "../lib/leetcode/constants";
 import { fetchProblem, slugFromPath } from "../lib/leetcode/metadata";
 import { parseBridgeMessage } from "../lib/messages";
 import { pageStore, resetPageState } from "../lib/page-state";
@@ -13,7 +13,7 @@ const problemPattern = new MatchPattern(PROBLEM_MATCH_PATTERN);
 export default defineContentScript({
   // Matches all of leetcode.com: LeetCode is an SPA, so a script scoped to /problems/* would not be
   // injected when the student navigates from the problem list. We filter by URL in code instead.
-  matches: ["https://leetcode.com/*"],
+  matches: [SITE_MATCH_PATTERN],
   runAt: "document_idle",
   cssInjectionMode: "ui",
   async main(ctx) {
