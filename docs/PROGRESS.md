@@ -13,7 +13,16 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 0.7 Project memory and documentation
 
 ## Stage 1: Walking skeleton
-- [ ] (task IDs to be added from stage1.md)
+- [ ] 1.1 Constants and types
+- [ ] 1.2 MAIN-world bridge
+- [ ] 1.3 Isolated content script, SPA navigation, problem metadata
+- [ ] 1.4 Shadow DOM panel and mascot
+- [ ] 1.5 Service worker: device id, API client, streaming
+- [ ] 1.6 API: hint endpoint and LLM gateway
+- [ ] 1.7 Tracing
+- [ ] 1.8 Wire the UI to the API
+- [ ] 1.9 End-to-end tests with synthetic fixtures
+- [ ] 1.10 Manual checklist for the user
 
 ## Stage 2: Hint ladder and leak guard
 - [ ] (task IDs to be added from stage2.md)
