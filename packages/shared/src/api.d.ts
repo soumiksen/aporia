@@ -38,14 +38,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/hint": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Hint */
+        post: operations["post_hint_v1_hint_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** HTTPValidationError */
+        HTTPValidationError: {
+            /** Detail */
+            detail?: components["schemas"]["ValidationError"][];
+        };
         /** HealthResponse */
         HealthResponse: {
             /** Status */
             status: string;
+        };
+        /** HintRequest */
+        HintRequest: {
+            /** Code */
+            code: string;
+            /** Language */
+            language: string;
+            /**
+             * Level
+             * @default 1
+             */
+            level: number;
+            problem: components["schemas"]["ProblemContext"];
+            /** Student Message */
+            student_message?: string | null;
+        };
+        /** ProblemContext */
+        ProblemContext: {
+            /** Content Text */
+            content_text: string;
+            /** Difficulty */
+            difficulty: string;
+            /** Meta */
+            meta?: {
+                [key: string]: unknown;
+            } | null;
+            /** Slug */
+            slug: string;
+            /** Tags */
+            tags: string[];
+            /** Title */
+            title: string;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -55,6 +109,19 @@ export interface components {
             redis: string;
             /** Status */
             status: string;
+        };
+        /** ValidationError */
+        ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
+            /** Location */
+            loc: (string | number)[];
+            /** Message */
+            msg: string;
+            /** Error Type */
+            type: string;
         };
     };
     responses: never;
@@ -101,6 +168,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReadyResponse"];
+                };
+            };
+        };
+    };
+    post_hint_v1_hint_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-aporia-device"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HintRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
