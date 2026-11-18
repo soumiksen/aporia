@@ -3,6 +3,10 @@ import { fetchProblem, slugFromPath } from "../lib/leetcode/metadata";
 import { parseBridgeMessage } from "../lib/messages";
 import { pageStore, resetPageState } from "../lib/page-state";
 import { MatchPattern } from "wxt/utils/match-patterns";
+import { createRoot } from "react-dom/client";
+import { createElement } from "react";
+import { App } from "../ui/App";
+import "../styles/panel.css";
 
 const problemPattern = new MatchPattern(PROBLEM_MATCH_PATTERN);
 
@@ -11,7 +15,8 @@ export default defineContentScript({
   // injected when the student navigates from the problem list. We filter by URL in code instead.
   matches: ["https://leetcode.com/*"],
   runAt: "document_idle",
-  main(ctx) {
+  cssInjectionMode: "ui",
+  async main(ctx) {
     const sync = (url: URL) => {
       const slug = problemPattern.includes(url.href) ? slugFromPath(url.pathname) : null;
       if (slug === pageStore.getState().slug) return;
@@ -48,5 +53,21 @@ export default defineContentScript({
 
     ctx.addEventListener(window, "wxt:locationchange", ({ newUrl }) => sync(newUrl));
     sync(new URL(window.location.href));
+
+    const ui = await createShadowRootUi(ctx, {
+      name: "aporia-panel",
+      position: "inline",
+      anchor: "body",
+      isolateEvents: true,
+      onMount(container) {
+        const root = createRoot(container);
+        root.render(createElement(App));
+        return root;
+      },
+      onRemove(root) {
+        root?.unmount();
+      },
+    });
+    ui.mount();
   },
 });
