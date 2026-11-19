@@ -30,7 +30,8 @@ GEN_AND_VALIDATE = """
 import random
 
 def gen(rng, size):
-    n = {"tiny": rng.randint(2, 4), "small": rng.randint(2, 12), "large": rng.randint(50, 200)}[size]
+    low, high = {"tiny": (2, 4), "small": (2, 12), "large": (50, 200)}[size]
+    n = rng.randint(low, high)
     return [[rng.randint(-5, 5) for _ in range(n)], rng.randint(-6, 6)]
 
 def validate(args):
