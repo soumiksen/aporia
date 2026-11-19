@@ -1,0 +1,60 @@
+{
+  "slug": "subset-target",
+  "title": "Subset Target",
+  "difficulty": "Medium",
+  "tags": [
+    "Dynamic Programming",
+    "Bit Manipulation"
+  ],
+  "content_text": "Given a list of non-negative integers nums and a non-negative integer target, return true if some subset of nums (possibly empty) adds up to exactly target, and false otherwise. Each element can be used at most once.",
+  "meta": {
+    "name": "subsetTarget",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      },
+      {
+        "name": "target",
+        "type": "integer"
+      }
+    ],
+    "return": {
+      "type": "boolean"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        [
+          3,
+          34,
+          4,
+          12,
+          5
+        ],
+        9
+      ],
+      "expected": true
+    },
+    {
+      "args": [
+        [
+          2,
+          4
+        ],
+        5
+      ],
+      "expected": false
+    },
+    {
+      "args": [
+        [],
+        0
+      ],
+      "expected": true
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\n\ndef solve_optimal(nums, target):\n    reachable = 1\n    for x in nums:\n        reachable |= reachable << x\n    return bool((reachable >> target) & 1)\n\ndef solve_brute(nums, target):\n    n = len(nums)\n    for mask in range(1 << n):\n        total = 0\n        for i in range(n):\n            if mask >> i & 1:\n                total += nums[i]\n        if total == target:\n            return True\n    return False\n\ndef gen(rng, size):\n    n = rng.randint(0, {\"tiny\": 3, \"small\": 7, \"large\": 11}[size])\n    nums = [rng.randint(0, 15) for _ in range(n)]\n    return [nums, rng.randint(0, 40)]\n\ndef validate(args):\n    nums, target = args\n    return 0 <= len(nums) <= 20 and all(x >= 0 for x in nums) and target >= 0\n"
+}

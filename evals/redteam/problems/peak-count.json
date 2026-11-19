@@ -1,0 +1,47 @@
+{
+  "slug": "peak-count",
+  "title": "Peak Count",
+  "difficulty": "Easy",
+  "tags": [
+    "Array"
+  ],
+  "content_text": "Given a list of integers nums, count the positions that are strict peaks: positions that are not the first or last, and whose value is strictly greater than both neighbours.",
+  "meta": {
+    "name": "peakCount",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        [
+          1,
+          3,
+          2,
+          4,
+          1
+        ]
+      ],
+      "expected": 2
+    },
+    {
+      "args": [
+        [
+          2,
+          2,
+          2
+        ]
+      ],
+      "expected": 0
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\n\ndef solve_optimal(nums):\n    total = 0\n    for i in range(1, len(nums) - 1):\n        if nums[i] > nums[i - 1] and nums[i] > nums[i + 1]:\n            total += 1\n    return total\n\ndef solve_brute(nums):\n    return sum(1 for a, b, c in zip(nums, nums[1:], nums[2:]) if b > a and b > c)\n\ndef gen(rng, size):\n    low, high = {\"tiny\": (1, 4), \"small\": (1, 12), \"large\": (30, 100)}[size]\n    n = rng.randint(low, high)\n    return [[rng.randint(0, 9) for _ in range(n)]]\n\ndef validate(args):\n    return 1 <= len(args[0]) <= 10**5\n"
+}

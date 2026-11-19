@@ -1,0 +1,57 @@
+{
+  "slug": "calm-stretch",
+  "title": "Calm Stretch",
+  "difficulty": "Medium",
+  "tags": [
+    "Array",
+    "Sliding Window",
+    "Deque"
+  ],
+  "content_text": "Given a list of integers nums and a non-negative integer limit, return the length of the longest contiguous run of nums in which the largest value minus the smallest value is at most limit.",
+  "meta": {
+    "name": "calmStretch",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      },
+      {
+        "name": "limit",
+        "type": "integer"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        [
+          8,
+          2,
+          4,
+          7
+        ],
+        4
+      ],
+      "expected": 2
+    },
+    {
+      "args": [
+        [
+          10,
+          1,
+          2,
+          4,
+          7,
+          2
+        ],
+        5
+      ],
+      "expected": 4
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\nfrom collections import deque\n\ndef solve_optimal(nums, limit):\n    maxq, minq = deque(), deque()\n    left = 0\n    best = 0\n    for right, x in enumerate(nums):\n        while maxq and nums[maxq[-1]] <= x:\n            maxq.pop()\n        maxq.append(right)\n        while minq and nums[minq[-1]] >= x:\n            minq.pop()\n        minq.append(right)\n        while nums[maxq[0]] - nums[minq[0]] > limit:\n            left += 1\n            if maxq[0] < left:\n                maxq.popleft()\n            if minq[0] < left:\n                minq.popleft()\n        best = max(best, right - left + 1)\n    return best\n\ndef solve_brute(nums, limit):\n    best = 0\n    for i in range(len(nums)):\n        for j in range(i, len(nums)):\n            window = nums[i:j + 1]\n            if max(window) - min(window) <= limit:\n                best = max(best, j - i + 1)\n    return best\n\ndef gen(rng, size):\n    low, high = {\"tiny\": (1, 4), \"small\": (1, 12), \"large\": (30, 80)}[size]\n    n = rng.randint(low, high)\n    return [[rng.randint(0, 30) for _ in range(n)], rng.randint(0, 15)]\n\ndef validate(args):\n    nums, limit = args\n    return 1 <= len(nums) <= 1000 and limit >= 0 and all(0 <= x <= 10**9 for x in nums)\n"
+}

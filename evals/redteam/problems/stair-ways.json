@@ -1,0 +1,44 @@
+{
+  "slug": "stair-ways",
+  "title": "Stair Ways",
+  "difficulty": "Easy",
+  "tags": [
+    "Dynamic Programming",
+    "Math"
+  ],
+  "content_text": "You climb a staircase of n steps, taking 1, 2, or 3 steps at a time. Return the number of distinct orders of steps that reach exactly step n, modulo 1000000007. There is one way to climb 0 steps.",
+  "meta": {
+    "name": "stairWays",
+    "params": [
+      {
+        "name": "n",
+        "type": "integer"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        3
+      ],
+      "expected": 4
+    },
+    {
+      "args": [
+        4
+      ],
+      "expected": 7
+    },
+    {
+      "args": [
+        0
+      ],
+      "expected": 1
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\n\nMOD = 1_000_000_007\n\ndef solve_optimal(n):\n    ways = [1, 1, 2]\n    for i in range(3, n + 1):\n        ways.append((ways[-1] + ways[-2] + ways[-3]) % MOD)\n    return ways[n] % MOD\n\ndef solve_brute(n):\n    def count(left):\n        if left < 0:\n            return 0\n        if left == 0:\n            return 1\n        return count(left - 1) + count(left - 2) + count(left - 3)\n    return count(n) % MOD\n\ndef gen(rng, size):\n    return [rng.randint(0, {\"tiny\": 4, \"small\": 10, \"large\": 16}[size])]\n\ndef validate(args):\n    return isinstance(args[0], int) and 0 <= args[0] <= 20\n"
+}

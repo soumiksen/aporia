@@ -10,7 +10,10 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "build": "turbo run build",
-    "gen:api": "uv --directory apps/api run python -m app.export_openapi ../../packages/shared/openapi.json && pnpm --filter shared exec openapi-typescript openapi.json -o src/api.d.ts"
+    "gen:api": "uv --directory apps/api run python -m app.export_openapi ../../packages/shared/openapi.json && pnpm --filter shared exec openapi-typescript openapi.json -o src/api.d.ts",
+    "eval:redteam": "uv --directory apps/api run python ../../evals/redteam/run.py",
+    "eval:gate": "uv --directory apps/api run python ../../evals/redteam/gate.py",
+    "eval:test": "uv --directory apps/api run pytest ../../evals -q"
   },
   "devDependencies": {
     "prettier": "^3.10.1",

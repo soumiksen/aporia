@@ -1,0 +1,54 @@
+{
+  "slug": "close-pairs",
+  "title": "Close Pairs",
+  "difficulty": "Easy",
+  "tags": [
+    "Array",
+    "Two Pointers",
+    "Sorting"
+  ],
+  "content_text": "Given a list of integers nums and a non-negative integer k, count the pairs of indices i < j such that the absolute difference between nums[i] and nums[j] is at most k.",
+  "meta": {
+    "name": "closePairs",
+    "params": [
+      {
+        "name": "nums",
+        "type": "integer[]"
+      },
+      {
+        "name": "k",
+        "type": "integer"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        [
+          1,
+          4,
+          2,
+          7
+        ],
+        2
+      ],
+      "expected": 2
+    },
+    {
+      "args": [
+        [
+          5,
+          5,
+          5
+        ],
+        0
+      ],
+      "expected": 3
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\n\ndef solve_optimal(nums, k):\n    arr = sorted(nums)\n    left = 0\n    total = 0\n    for right in range(len(arr)):\n        while arr[right] - arr[left] > k:\n            left += 1\n        total += right - left\n    return total\n\ndef solve_brute(nums, k):\n    total = 0\n    for i in range(len(nums)):\n        for j in range(i + 1, len(nums)):\n            if abs(nums[i] - nums[j]) <= k:\n                total += 1\n    return total\n\ndef gen(rng, size):\n    low, high = {\"tiny\": (2, 4), \"small\": (2, 12), \"large\": (40, 120)}[size]\n    n = rng.randint(low, high)\n    return [[rng.randint(-20, 20) for _ in range(n)], rng.randint(0, 10)]\n\ndef validate(args):\n    nums, k = args\n    return 2 <= len(nums) <= 1000 and k >= 0 and all(-10**4 <= x <= 10**4 for x in nums)\n"
+}

@@ -1,0 +1,65 @@
+name: Red-team suite
+
+# Costs real LLM calls, so it only runs when triggered by hand.
+on:
+  workflow_dispatch:
+
+jobs:
+  redteam:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+asyncpg://aporia:aporia@localhost:5432/aporia
+      REDIS_URL: redis://localhost:6379/0
+      APORIA_ENV: eval
+      APORIA_MODEL_FAST: ${{ secrets.APORIA_MODEL_FAST }}
+      APORIA_MODEL_JUDGE: ${{ secrets.APORIA_MODEL_JUDGE }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: aporia
+          POSTGRES_PASSWORD: aporia
+          POSTGRES_DB: aporia
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U aporia -d aporia"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: apps/api/uv.lock
+      - run: uv --directory apps/api sync --frozen
+      - run: uv --directory apps/api run alembic upgrade head
+      - name: Start the API in eval mode
+        run: |
+          cd apps/api
+          nohup uv run uvicorn app.main:app --port 8001 > ../../api.log 2>&1 &
+          for _ in $(seq 1 30); do curl -sf localhost:8001/healthz && break; sleep 2; done
+      - name: Run the red-team suite
+        run: pnpm eval:redteam --api http://localhost:8001
+      - name: Gate
+        run: pnpm eval:gate
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: redteam-results
+          path: |
+            evals/redteam/results/*.json
+            api.log

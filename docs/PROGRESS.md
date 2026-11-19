@@ -31,7 +31,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 2.4 Hint ladder state machine
 - [x] 2.5 Deterministic safe hints
 - [x] 2.6 Leak guard v1 (prompted)
-- [ ] 2.7 Red-team suite
+- [x] 2.7 Red-team suite (built and tested offline; **the user still has to run `pnpm eval:redteam` with real keys**)
 - [ ] 2.8 Extension: ladder UI
 
 ## Stage 3: Execution-grounded hints and stuck detection

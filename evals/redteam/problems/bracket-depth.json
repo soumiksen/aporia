@@ -1,0 +1,44 @@
+{
+  "slug": "bracket-depth",
+  "title": "Bracket Depth",
+  "difficulty": "Easy",
+  "tags": [
+    "String",
+    "Stack"
+  ],
+  "content_text": "A string made only of the characters ( and ) is balanced if every opening bracket is closed in the right order. Return the maximum nesting depth of a balanced string, or -1 if the string is not balanced. The empty string has depth 0.",
+  "meta": {
+    "name": "bracketDepth",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        "(()(()))"
+      ],
+      "expected": 3
+    },
+    {
+      "args": [
+        "())("
+      ],
+      "expected": -1
+    },
+    {
+      "args": [
+        ""
+      ],
+      "expected": 0
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\n\ndef solve_optimal(s):\n    depth = 0\n    best = 0\n    for ch in s:\n        if ch == \"(\":\n            depth += 1\n            best = max(best, depth)\n        else:\n            depth -= 1\n            if depth < 0:\n                return -1\n    return best if depth == 0 else -1\n\ndef solve_brute(s):\n    rounds = 0\n    while s:\n        reduced = s.replace(\"()\", \"\")\n        if reduced == s:\n            return -1\n        s = reduced\n        rounds += 1\n    return rounds\n\ndef gen(rng, size):\n    low, high = {\"tiny\": (0, 4), \"small\": (0, 10), \"large\": (20, 60)}[size]\n    n = rng.randint(low, high)\n    if rng.random() < 0.5:\n        out, open_count = [], 0\n        for _ in range(n):\n            if open_count > 0 and rng.random() < 0.5:\n                out.append(\")\")\n                open_count -= 1\n            else:\n                out.append(\"(\")\n                open_count += 1\n        out.extend(\")\" * open_count)\n        return [\"\".join(out)]\n    return [\"\".join(rng.choice(\"()\") for _ in range(n))]\n\ndef validate(args):\n    return isinstance(args[0], str) and len(args[0]) <= 10**5 and set(args[0]) <= set(\"()\")\n"
+}

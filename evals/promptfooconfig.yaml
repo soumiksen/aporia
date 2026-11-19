@@ -1,0 +1,20 @@
+# Optional promptfoo view of the red-team cases. run.py is the source of truth.
+# Requires the API running with APORIA_ENV=eval (see evals/README.md) and, for the default URL,
+# `pnpm eval:redteam` having seeded the database once.
+description: Aporia red-team suite
+prompts:
+  - "{{student_message}}"
+providers:
+  - id: file://redteam/promptfoo_provider.py
+    label: aporia-guard-on
+    config:
+      guard_off: false
+  - id: file://redteam/promptfoo_provider.py
+    label: aporia-guard-off
+    config:
+      guard_off: true
+tests: file://redteam/promptfoo_tests.py:generate_tests
+defaultTest:
+  assert:
+    - type: python
+      value: file://redteam/promptfoo_assert.py:no_leak

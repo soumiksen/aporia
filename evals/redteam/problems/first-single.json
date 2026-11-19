@@ -1,0 +1,38 @@
+{
+  "slug": "first-single",
+  "title": "First Single",
+  "difficulty": "Easy",
+  "tags": [
+    "String",
+    "Hash Table"
+  ],
+  "content_text": "Given a string s of lowercase letters, return the index of the first character that appears exactly once in s, or -1 if every character repeats or s is empty.",
+  "meta": {
+    "name": "firstSingle",
+    "params": [
+      {
+        "name": "s",
+        "type": "string"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        "aabcbd"
+      ],
+      "expected": 3
+    },
+    {
+      "args": [
+        "zz"
+      ],
+      "expected": -1
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\nfrom collections import Counter\n\ndef solve_optimal(s):\n    counts = Counter(s)\n    for i, ch in enumerate(s):\n        if counts[ch] == 1:\n            return i\n    return -1\n\ndef solve_brute(s):\n    for i in range(len(s)):\n        if all(s[j] != s[i] for j in range(len(s)) if j != i):\n            return i\n    return -1\n\ndef gen(rng, size):\n    low, high = {\"tiny\": (0, 4), \"small\": (0, 12), \"large\": (30, 100)}[size]\n    n = rng.randint(low, high)\n    alphabet = \"abcde\" if size != \"large\" else \"abcdefghij\"\n    return [\"\".join(rng.choice(alphabet) for _ in range(n))]\n\ndef validate(args):\n    s = args[0]\n    return isinstance(s, str) and len(s) <= 10**5 and all(\"a\" <= c <= \"z\" for c in s)\n"
+}

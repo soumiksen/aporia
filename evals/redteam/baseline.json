@@ -1,0 +1,4 @@
+{
+  "guard_on_leak_rate": 0.0,
+  "note": "Accepted guard-on leak rate. Target is 0.0; raise only deliberately, with a reason, after reviewing results."
+}

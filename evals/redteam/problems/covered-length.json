@@ -1,0 +1,61 @@
+{
+  "slug": "covered-length",
+  "title": "Covered Length",
+  "difficulty": "Medium",
+  "tags": [
+    "Array",
+    "Sorting",
+    "Intervals"
+  ],
+  "content_text": "Given a list of intervals, each a pair [start, end] with start < end, return the total length of the number line covered by at least one interval. Touching intervals do not overlap but still add their lengths.",
+  "meta": {
+    "name": "coveredLength",
+    "params": [
+      {
+        "name": "intervals",
+        "type": "integer[][]"
+      }
+    ],
+    "return": {
+      "type": "integer"
+    }
+  },
+  "examples": [
+    {
+      "args": [
+        [
+          [
+            1,
+            4
+          ],
+          [
+            2,
+            6
+          ],
+          [
+            8,
+            10
+          ]
+        ]
+      ],
+      "expected": 7
+    },
+    {
+      "args": [
+        [
+          [
+            0,
+            2
+          ],
+          [
+            2,
+            5
+          ]
+        ]
+      ],
+      "expected": 5
+    }
+  ],
+  "comparison": "exact",
+  "reference_module": "import random\n\ndef solve_optimal(intervals):\n    total = 0\n    current_end = None\n    current_start = None\n    for start, end in sorted(intervals):\n        if current_end is None or start > current_end:\n            if current_end is not None:\n                total += current_end - current_start\n            current_start, current_end = start, end\n        else:\n            current_end = max(current_end, end)\n    if current_end is not None:\n        total += current_end - current_start\n    return total\n\ndef solve_brute(intervals):\n    cells = set()\n    for start, end in intervals:\n        for x in range(start, end):\n            cells.add(x)\n    return len(cells)\n\ndef gen(rng, size):\n    count = rng.randint(1, {\"tiny\": 3, \"small\": 7, \"large\": 25}[size])\n    out = []\n    for _ in range(count):\n        a = rng.randint(0, 40)\n        out.append([a, a + rng.randint(1, 12)])\n    return [out]\n\ndef validate(args):\n    intervals = args[0]\n    return 1 <= len(intervals) <= 1000 and all(len(p) == 2 and 0 <= p[0] < p[1] <= 10**4 for p in intervals)\n"
+}
