@@ -25,7 +25,14 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 1.10 Manual checklist for the user (written; **the user still has to run it**)
 
 ## Stage 2: Hint ladder and leak guard
-- [ ] (task IDs to be added from stage2.md)
+- [ ] 2.1 Database models and migration
+- [ ] 2.2 Sandbox runner
+- [ ] 2.3 Reference-solution pipeline
+- [ ] 2.4 Hint ladder state machine
+- [ ] 2.5 Deterministic safe hints
+- [ ] 2.6 Leak guard v1 (prompted)
+- [ ] 2.7 Red-team suite
+- [ ] 2.8 Extension: ladder UI
 
 ## Stage 3: Execution-grounded hints and stuck detection
 - [ ] (task IDs to be added from stage3.md)
