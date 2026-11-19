@@ -45,7 +45,7 @@ describe("streamHint", () => {
     expect(events).toEqual([
       { event: "token", text: "Hello" },
       { event: "token", text: " world" },
-      { event: "done", hint_id: "h1", level: 1, sources: [] },
+      { event: "done", hint_id: "h1", level: 1, sources: [], supported: true },
     ]);
     const init = f.mock.calls[0]?.[1] as RequestInit;
     expect(init.method).toBe("POST");
@@ -94,6 +94,8 @@ describe("streamHint", () => {
         "event: token\ndata: not-json\n\n",
         'event: done\ndata: {"hint_id":"h","level":1,"sources":[]}\n\n',
       ])) as unknown as typeof fetch);
-    expect(events).toEqual([{ event: "done", hint_id: "h", level: 1, sources: [] }]);
+    expect(events).toEqual([
+      { event: "done", hint_id: "h", level: 1, sources: [], supported: true },
+    ]);
   });
 });

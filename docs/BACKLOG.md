@@ -27,3 +27,13 @@
 - Show the hint level and a "next hint" button in the panel (levels 2 to 4 come in Stage 2).
 - Surface the captured language id mapping (monaco ids vs LeetCode `python3`) in the request.
 - Dark mode for the panel (theme variables already live on `:host`).
+
+## Ideas parked during Stage 2
+- Execution-grounded hints: student mode in the harness already exists; failing-case search and
+  shrinking are Stage 3.
+- Show the student's own `attempts` history (the table exists but is not written yet).
+- Per-level model routing (fast model for L1-L2, strong for L3-L4) once Stage 5 adds routing.
+- Replace the test-only subprocess runner with a Judge0 on a cgroup-v1 Linux host for CI.
+- Surface "guard rewrote this hint" to the student only as telemetry, never in the panel.
+- A classifier-first guard (Stage 5) to cut judge latency and cost.
+

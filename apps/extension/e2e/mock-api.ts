@@ -2,19 +2,48 @@ import { createServer, type Server } from "node:http";
 
 export interface RecordedRequest {
   headers: Record<string, string | string[] | undefined>;
-  body: { problem: { slug: string }; code: string; language: string; level: number };
+  body: {
+    problem: { slug: string };
+    code: string;
+    language: string;
+    level: number;
+    student_message: string | null;
+    failed_attempts: number;
+  };
+}
+
+export interface RecordedRating {
+  hintId: string;
+  rating: number;
+  device: string | string[] | undefined;
 }
 
 export interface MockApi {
   url: string;
   requests: RecordedRequest[];
+  ratings: RecordedRating[];
   close: () => Promise<void>;
 }
 
 /** Tiny stand-in for the Aporia API: streams a canned SSE hint and records requests. */
 export async function startMockApi(port: number): Promise<MockApi> {
   const requests: RecordedRequest[] = [];
+  const ratings: RecordedRating[] = [];
   const server: Server = createServer((req, res) => {
+    const rating = /^\/v1\/hint\/([^/]+)\/rating$/.exec(req.url ?? "");
+    if (req.method === "POST" && rating) {
+      let raw = "";
+      req.on("data", (c: Buffer) => (raw += c.toString()));
+      req.on("end", () => {
+        ratings.push({
+          hintId: decodeURIComponent(rating[1] ?? ""),
+          rating: JSON.parse(raw).rating,
+          device: req.headers["x-aporia-device"],
+        });
+        res.writeHead(204).end();
+      });
+      return;
+    }
     if (req.method !== "POST" || req.url !== "/v1/hint") {
       res.writeHead(404).end();
       return;
@@ -22,9 +51,12 @@ export async function startMockApi(port: number): Promise<MockApi> {
     let raw = "";
     req.on("data", (c: Buffer) => (raw += c.toString()));
     req.on("end", () => {
-      requests.push({ headers: req.headers, body: JSON.parse(raw) });
+      const body = JSON.parse(raw) as RecordedRequest["body"];
+      requests.push({ headers: req.headers, body });
       res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache" });
-      const tokens = ["What ", "happens ", "with ", "one ", "element?"];
+      // Level-aware canned hint; problems whose slug contains "anagram" are "unsupported".
+      const tokens = [`L${body.level}: `, "What ", "happens ", "with ", "one ", "element?"];
+      const supported = !body.problem.slug.includes("anagram");
       let i = 0;
       const timer = setInterval(() => {
         if (i < tokens.length) {
@@ -33,7 +65,12 @@ export async function startMockApi(port: number): Promise<MockApi> {
         } else {
           clearInterval(timer);
           res.write(
-            `event: done\ndata: ${JSON.stringify({ hint_id: "h-1", level: 1, sources: [] })}\n\n`,
+            `event: done\ndata: ${JSON.stringify({
+              hint_id: `h-${requests.length}`,
+              level: body.level,
+              sources: [],
+              supported,
+            })}\n\n`,
           );
           res.end();
         }
@@ -45,6 +82,7 @@ export async function startMockApi(port: number): Promise<MockApi> {
   return {
     url: `http://127.0.0.1:${port}`,
     requests,
+    ratings,
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
 }

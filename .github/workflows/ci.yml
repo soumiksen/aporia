@@ -65,6 +65,7 @@ jobs:
       - run: uv run pyright
       - run: uv run alembic upgrade head
       - run: uv run pytest
+      - run: uv run ruff check ../../evals && uv run pytest ../../evals -q
 
   contract:
     runs-on: ubuntu-latest

@@ -7,6 +7,8 @@ interface ProtocolMap {
   getHint(data: { requestId: string; request: HintRequest }): void;
   /** Content script -> service worker. Aborts an in-flight stream. */
   cancelHint(data: { requestId: string }): void;
+  /** Content script -> service worker. Rates a delivered hint (1 = not helpful, 5 = great). */
+  rateHint(data: { hintId: string; rating: number }): boolean;
   /** Any context -> service worker. Returns (creating if needed) the device UUID. */
   getDeviceId(): string;
   /** Service worker -> content script (tab). One streamed event. */

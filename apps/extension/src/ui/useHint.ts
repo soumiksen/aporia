@@ -4,18 +4,26 @@ import { problemFromPage } from "@/lib/leetcode/metadata";
 import type { HintRequest } from "@/lib/messages";
 import { pageStore } from "@/lib/page-state";
 import { onMessage, sendMessage } from "@/lib/protocol";
-import { useHintStore } from "@/store/hint-store";
+import { MAX_LEVEL, MAX_MESSAGE_CHARS, useHintStore } from "@/store/hint-store";
+
+export interface AskOptions {
+  level: number;
+  studentMessage?: string;
+}
 
 /** Builds the request from the latest bridge state. Never blocks on missing code or metadata. */
-export function buildRequest(): HintRequest | null {
+export function buildRequest(options: AskOptions): HintRequest | null {
   const s = pageStore.getState();
   if (!s.slug) return null;
+  const message = options.studentMessage?.trim().slice(0, MAX_MESSAGE_CHARS);
   return {
     problem: s.problem ?? problemFromPage(s.slug, document),
     code: s.code ?? "",
     language: s.language ?? "unknown",
-    level: 1,
-    student_message: null,
+    level: Math.max(1, Math.min(MAX_LEVEL, options.level)),
+    student_message: message ? message : null,
+    failed_attempts: s.failedSinceHint,
+    last_verdict: s.lastVerdict?.statusMessage ?? null,
   };
 }
 
@@ -38,7 +46,8 @@ export function useHint() {
       const store = useHintStore.getState();
       const { event } = data;
       if (event.event === "token") store.append(event.text);
-      else if (event.event === "done") store.finish();
+      else if (event.event === "done")
+        store.finish({ hintId: event.hint_id, level: event.level, supported: event.supported });
       else store.fail(event.code, event.message);
     });
   }, []);
@@ -48,12 +57,13 @@ export function useHint() {
     cancel();
   }, [slug, cancel]);
 
-  const ask = useCallback(() => {
-    const request = buildRequest();
+  const ask = useCallback((options: AskOptions = { level: 1 }) => {
+    const request = buildRequest(options);
     if (!request) return;
     const id = crypto.randomUUID();
     requestId.current = id;
-    useHintStore.getState().start(1);
+    pageStore.setState({ failedSinceHint: 0 }); // the counter is "failures since the last hint"
+    useHintStore.getState().start(request.level ?? 1);
     sendMessage("getHint", { requestId: id, request }).catch(() => {
       if (requestId.current !== id) return;
       useHintStore
@@ -62,5 +72,12 @@ export function useHint() {
     });
   }, []);
 
-  return { ask, cancel, slug, codeKnown };
+  const rate = useCallback((rating: number) => {
+    const { hintId, rated } = useHintStore.getState();
+    if (!hintId || rated) return;
+    useHintStore.getState().markRated();
+    void sendMessage("rateHint", { hintId, rating }).catch(() => undefined);
+  }, []);
+
+  return { ask, cancel, rate, slug, codeKnown };
 }

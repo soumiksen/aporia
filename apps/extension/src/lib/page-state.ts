@@ -9,6 +9,8 @@ export interface PageState {
   code: string | null;
   language: string | null;
   lastVerdict: Omit<VerdictMessage, "source" | "type"> | null;
+  /** Failed run/submit verdicts observed since the last hint was requested. */
+  failedSinceHint: number;
 }
 
 const initial: PageState = {
@@ -18,6 +20,7 @@ const initial: PageState = {
   code: null,
   language: null,
   lastVerdict: null,
+  failedSinceHint: 0,
 };
 
 /** Latest observed LeetCode page state, shared by the content script and the UI. */

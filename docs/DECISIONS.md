@@ -55,3 +55,41 @@
 - Tailwind rem values are compiled to px by a small PostCSS plugin in `wxt.config.ts`, so the
   host page's `html` font-size cannot rescale the panel (setting font-size on a container does
   not change rem).
+
+## Stage 2 implementation decisions (2026-11-18)
+- **Ladder skipping:** the stage text ("never skip more than one level above level_reached + 1") is
+  ambiguous. Implemented the conservative reading: a request is capped at `level_reached + 1`
+  (no skipped rungs). Asking for a lower level re-serves it. Auto-escalation after 3 failed
+  attempts raises the level to `level_reached + 1`. Table-driven tests pin this.
+- **Contract additions:** `HintRequest.failed_attempts` (failed runs since the last hint, counted by
+  the extension) and `last_verdict`; `done.supported` (false: prompt-only); `POST
+  /v1/hint/{id}/rating` for the "Not helpful" link (writes `hints.rating`, owner-checked).
+- **Statement text is never stored.** The `problems` table has no statement column (privacy), so
+  the build job receives the problem context in its Arq job arguments (transient, in Redis).
+- **Reference verification:** 400 cases requested (200 tiny, 150 small, 50 large), invalid ones are
+  dropped, and at least 300 valid cases must agree. Brute-force timeouts are tolerated only on
+  `large` cases. `gen` and `validate` also run in the sandbox. Infrastructure failures (LLM or
+  sandbox down) are not stored as a permanent `failed`.
+- **Harness extension:** a fourth harness mode `gen` (the module's `gen`/`validate` are untrusted
+  code too), per-case timeouts use `setitimer` (float seconds) instead of `alarm`.
+- **Unordered comparison** sorts every list recursively by canonical JSON.
+- **Guard failure policy:** a failure of the *first draft generation* is an `error` event (an LLM
+  outage must not look like a normal hint). Any failure of the guard, or of the regeneration after
+  a leak, returns the deterministic safe hint. Replies are never returned unchecked while the
+  guard is on. `X-Aporia-Disable-Guard: 1` works only when `APORIA_ENV=eval`.
+- **Heuristics:** AST similarity threshold 0.6 (`SIMILARITY_THRESHOLD`), shingle size 4 with at
+  least 8 shingles for containment; fenced or unfenced code over 3 lines is blocked at levels 1-3.
+  Hedged mentions ("I cannot say whether your code is correct") are not treated as assertions.
+- **Judge:** `partial` and `full` severity both count as leaks even if `leaks` is false.
+- **Sandbox on this host:** Judge0 (Docker Desktop, cgroup v2) resolves the Python language id and
+  accepts `enable_network: false`, but cannot run submissions (status 13 "Internal Error"). Reference
+  pipeline and harness are tested with a real subprocess runner that exists **only in tests**
+  (`tests/support/subprocess_runner.py`, trusted synthetic code, not a sandbox). The Judge0
+  integration test skips with that reason.
+- **Eval device state:** each red-team request uses a fresh device and the ladder state is
+  pre-seeded in Redis so requests for levels 3 and 4 are not capped to level 1.
+- **Scoring independence:** the deterministic score reuses the AST tools with a stricter threshold
+  (0.5) plus a verbatim reference-line overlap signal, and a separate LLM judge prompt; a reply
+  counts as leaked if either flags it.
+- The Stage 1 prompt `hint_v0` was replaced by `hint_l1_v1` ... `hint_l4_v1`.
+

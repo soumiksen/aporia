@@ -47,7 +47,9 @@ export const hintRequestSchema = z.object({
   code: z.string().max(50_000),
   language: z.string(),
   level: z.number().int().min(1).max(4).default(1),
-  student_message: z.string().nullable().optional(),
+  student_message: z.string().max(300).nullable().optional(),
+  failed_attempts: z.number().int().min(0).max(1000).default(0),
+  last_verdict: z.string().nullable().optional(),
 });
 
 export type HintRequest = z.input<typeof hintRequestSchema>;
@@ -60,6 +62,8 @@ export const hintEventSchema = z.discriminatedUnion("event", [
     hint_id: z.string(),
     level: z.number(),
     sources: z.array(z.unknown()),
+    // false: the API cannot run code for this problem, so hints are prompt-only
+    supported: z.boolean().default(true),
   }),
   z.object({ event: z.literal("error"), code: z.string(), message: z.string() }),
 ]);

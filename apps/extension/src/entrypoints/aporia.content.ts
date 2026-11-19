@@ -37,7 +37,9 @@ export default defineContentScript({
       if (msg.type === "code") {
         pageStore.setState({ code: msg.code, language: msg.language });
       } else {
+        const accepted = msg.statusMessage === "Accepted";
         pageStore.setState({
+          failedSinceHint: pageStore.getState().failedSinceHint + (accepted ? 0 : 1),
           lastVerdict: {
             phase: msg.phase,
             status: msg.status,

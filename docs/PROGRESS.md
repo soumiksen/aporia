@@ -32,7 +32,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 2.5 Deterministic safe hints
 - [x] 2.6 Leak guard v1 (prompted)
 - [x] 2.7 Red-team suite (built and tested offline; **the user still has to run `pnpm eval:redteam` with real keys**)
-- [ ] 2.8 Extension: ladder UI
+- [x] 2.8 Extension: ladder UI
 
 ## Stage 3: Execution-grounded hints and stuck detection
 - [ ] (task IDs to be added from stage3.md)
@@ -107,3 +107,56 @@ availability and language ids, and the description fallback selector.
 ### Versions added
 - extension: @webext-core/messaging, eventsource-parser, zustand, radix-ui, @playwright/test,
   jsdom, @testing-library/*; api: litellm, langfuse (>=4.7,<5), fakeredis (dev).
+
+## Stage 2 hand-off notes
+
+### Verified commands (2026-11-18)
+- `pnpm turbo run lint typecheck test build`: passes (extension: 61 Vitest tests).
+- `pnpm --filter extension e2e`: 8 Playwright tests pass (multi-level SSE, rating, banner, failed
+  attempts, SPA navigation, error state).
+- `cd apps/api && uv run ruff check . && uv run pyright && uv run pytest`: 210 passed, 2 skipped
+  (Judge0 integration; Postgres round-trip is `-m db`, run separately and passing).
+- `pnpm eval:test` (offline evals tests): 37 passed, including a full red-team run through the real
+  FastAPI app with a scripted model.
+- `alembic upgrade head` -> `0002_core_tables` on Postgres 16 + pgvector; downgrade/upgrade and
+  `alembic check` clean.
+- `pnpm eval:redteam` plumbing against real Postgres, Redis and HTTP with a canned model: works
+  (seeding, eval-mode check, results file, summary table, gate). That run proves nothing about leak
+  rates and its result file was deleted.
+
+### Not verified / needs the user
+- **First real leak rates: not yet measured.** Run `pnpm eval:redteam` with real keys (see
+  `evals/README.md`) and share the summary table. Placeholders to fill in once available:
+  guard-off leak rate: ____ ; guard-on leak rate: ____ (target 0.0; `baseline.json` is 0.0).
+- **Judge0 does not run on this host** (Docker Desktop, cgroup v2): language lookup works, execution
+  returns Internal Error. The sandbox integration test is explicitly skipped here. The harness and
+  pipeline were verified with a test-only subprocess runner instead. Reference building in the
+  worker needs Judge0 on a cgroup-v1 Linux host.
+- No real LLM was called for hints, the reference pipeline or the guard judge (all scripted or
+  mocked). Prompts have not been tuned against a live model.
+- promptfoo config (`evals/promptfooconfig.yaml`) is written but was not run (needs network and
+  `npx promptfoo`).
+- The new CI jobs and `redteam.yml` passed `actionlint` only; nothing has run on GitHub.
+
+### Sandbox runner in use
+`Judge0Runner` (production) / `FakeRunner` and a test-only `SubprocessRunner` (tests).
+
+### Problem types marked unsupported (`supported = false`, prompt-only hints)
+Any problem whose parameters or return type mention `ListNode`, `TreeNode` or `Node`; design-class
+problems (`classname`/`methods`/`systemdesign` metadata); manual-judge problems; problems with a
+`void` or unknown return type; problems with no method metadata.
+
+### Guard thresholds chosen
+`SIMILARITY_THRESHOLD = 0.6` (AST similarity to the reference; 4-token shingles, at least 8 for
+containment), fenced/unfenced code over 3 lines blocked at levels 1-3, correctness assertions
+blocked at levels 1-3, judge `partial`/`full` count as leaks, one rewrite then safe hint. The
+red-team scorer uses a stricter 0.5 plus verbatim reference-line overlap.
+
+### Reference pipeline
+At least one synthetic problem is verified through the pipeline in tests (`test_success_first_try`)
+and all 10 red-team reference modules pass the same verification (400+ agreeing cases each).
+
+### Contract changes since Stage 1
+`HintRequest.failed_attempts`/`last_verdict`, `done.supported`, `POST /v1/hint/{id}/rating`,
+`POST /v1/internal/reference/{slug}`. Regenerate with `pnpm gen:api` (done).
+

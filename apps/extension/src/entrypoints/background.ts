@@ -1,12 +1,22 @@
 import { API_URL } from "../lib/api-url";
 import { getOrCreateDeviceId } from "../lib/device";
 import { onMessage, sendMessage } from "../lib/protocol";
+import { postRating } from "../lib/rating";
 import { streamHint } from "../lib/sse";
 
 export default defineBackground(() => {
   const inflight = new Map<string, AbortController>();
 
   onMessage("getDeviceId", () => getOrCreateDeviceId(browser.storage.local));
+
+  onMessage("rateHint", async ({ data }) =>
+    postRating({
+      apiUrl: API_URL,
+      deviceId: await getOrCreateDeviceId(browser.storage.local),
+      hintId: data.hintId,
+      rating: data.rating,
+    }),
+  );
 
   onMessage("cancelHint", ({ data }) => {
     inflight.get(data.requestId)?.abort();
