@@ -29,7 +29,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 2.2 Sandbox runner
 - [x] 2.3 Reference-solution pipeline
 - [x] 2.4 Hint ladder state machine
-- [ ] 2.5 Deterministic safe hints
+- [x] 2.5 Deterministic safe hints
 - [ ] 2.6 Leak guard v1 (prompted)
 - [ ] 2.7 Red-team suite
 - [ ] 2.8 Extension: ladder UI
