@@ -74,3 +74,27 @@ async def stream_completion(
         delta = chunk.choices[0].delta.content
         if delta:
             yield delta
+
+
+MOCK_REPLY = "".join(MOCK_TOKENS)
+
+
+async def complete(
+    messages: list[dict[str, str]],
+    model_env: ModelEnv = "APORIA_MODEL_FAST",
+    *,
+    metadata: dict[str, Any] | None = None,
+) -> str:
+    """Non-streaming completion (the guard needs the whole draft before anything is shown)."""
+    if get_settings().aporia_llm_mock:
+        return MOCK_REPLY
+
+    model = resolve_model(model_env)
+    import litellm
+
+    from app.llm.tracing import configure_tracing
+
+    configure_tracing()
+    response = await litellm.acompletion(model=model, messages=messages, metadata=metadata or {})
+    content = response.choices[0].message.content  # pyright: ignore[reportAttributeAccessIssue]
+    return content or ""

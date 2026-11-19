@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     aporia_trace_code: bool = False
 
     rate_limit_per_minute: int = 30
+    aporia_internal_token: str = ""
 
 
 @lru_cache
