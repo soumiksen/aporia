@@ -35,7 +35,7 @@ def check_limits(req: HintRequest) -> None:
 
 
 def build_messages(req: HintRequest) -> list[dict[str, str]]:
-    system, user_template = load_prompt("hint_v0")
+    system, user_template = load_prompt("hint_l1_v1")
     user = render(
         user_template,
         {
@@ -45,6 +45,8 @@ def build_messages(req: HintRequest) -> list[dict[str, str]]:
             "content_text": req.problem.content_text,
             "language": req.language,
             "code": req.code,
+            "student_message": req.student_message or "",
+            "feedback": "",
         },
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]

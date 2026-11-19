@@ -5,10 +5,18 @@ from app.ratelimit import hit, is_allowed, window_key
 
 
 def test_prompt_sections_and_placeholders() -> None:
-    system, user = load_prompt("hint_v0")
-    assert "Socratic" in system and "Never write code" in system
+    system, user = load_prompt("hint_l1_v1")
+    assert "Socratic" in system and "write code" in system
     assert "untrusted" in system
-    for key in ("title", "difficulty", "tags", "content_text", "language", "code"):
+    for key in (
+        "title",
+        "difficulty",
+        "tags",
+        "content_text",
+        "language",
+        "code",
+        "student_message",
+    ):
         assert "{" + key + "}" in user
 
 
