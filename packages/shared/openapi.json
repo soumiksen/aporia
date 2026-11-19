@@ -33,9 +33,27 @@
             "title": "Code",
             "type": "string"
           },
+          "failed_attempts": {
+            "default": 0,
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Failed Attempts",
+            "type": "integer"
+          },
           "language": {
             "title": "Language",
             "type": "string"
+          },
+          "last_verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Verdict"
           },
           "level": {
             "default": 1,
@@ -113,6 +131,21 @@
           "content_text"
         ],
         "title": "ProblemContext",
+        "type": "object"
+      },
+      "RatingRequest": {
+        "properties": {
+          "rating": {
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Rating",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "title": "RatingRequest",
         "type": "object"
       },
       "ReadyResponse": {
@@ -228,6 +261,22 @@
         "parameters": [
           {
             "in": "header",
+            "name": "x-aporia-disable-guard",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Disable-Guard"
+            }
+          },
+          {
+            "in": "header",
             "name": "x-aporia-device",
             "required": false,
             "schema": {
@@ -274,6 +323,134 @@
           }
         },
         "summary": "Post Hint"
+      }
+    },
+    "/v1/hint/{hint_id}/rating": {
+      "post": {
+        "operationId": "post_rating_v1_hint__hint_id__rating_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hint_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Hint Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-aporia-device",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Device"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Rating"
+      }
+    },
+    "/v1/internal/reference/{slug}": {
+      "post": {
+        "operationId": "enqueue_reference_build_v1_internal_reference__slug__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-aporia-internal",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Internal"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProblemContext"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "boolean"
+                  },
+                  "title": "Response Enqueue Reference Build V1 Internal Reference  Slug  Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enqueue Reference Build"
       }
     }
   }

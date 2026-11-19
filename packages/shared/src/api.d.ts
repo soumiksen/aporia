@@ -55,6 +55,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/hint/{hint_id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Rating */
+        post: operations["post_rating_v1_hint__hint_id__rating_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/internal/reference/{slug}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enqueue Reference Build */
+        post: operations["enqueue_reference_build_v1_internal_reference__slug__post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -73,8 +107,15 @@ export interface components {
         HintRequest: {
             /** Code */
             code: string;
+            /**
+             * Failed Attempts
+             * @default 0
+             */
+            failed_attempts: number;
             /** Language */
             language: string;
+            /** Last Verdict */
+            last_verdict?: string | null;
             /**
              * Level
              * @default 1
@@ -100,6 +141,11 @@ export interface components {
             tags: string[];
             /** Title */
             title: string;
+        };
+        /** RatingRequest */
+        RatingRequest: {
+            /** Rating */
+            rating: number;
         };
         /** ReadyResponse */
         ReadyResponse: {
@@ -176,6 +222,7 @@ export interface operations {
         parameters: {
             query?: never;
             header?: {
+                "x-aporia-disable-guard"?: string | null;
                 "x-aporia-device"?: string | null;
             };
             path?: never;
@@ -194,6 +241,80 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_rating_v1_hint__hint_id__rating_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-aporia-device"?: string | null;
+            };
+            path: {
+                hint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enqueue_reference_build_v1_internal_reference__slug__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-aporia-internal"?: string | null;
+            };
+            path: {
+                slug: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProblemContext"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: boolean;
+                    };
                 };
             };
             /** @description Validation Error */

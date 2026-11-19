@@ -1,18 +1,23 @@
+from typing import Any
+
 import fakeredis
 import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.config import reset_settings
+from app.db import get_session_factory
 from app.main import app
 from app.models import Base
 from app.ratelimit import get_redis
+from app.reference.queue import get_enqueue
 
 
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Every test runs in mock mode with no keys and no network."""
     monkeypatch.setenv("APORIA_LLM_MOCK", "1")
+    monkeypatch.setenv("APORIA_ENV", "dev")
     for var in ("APORIA_MODEL_FAST", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
         monkeypatch.delenv(var, raising=False)
     reset_settings()
@@ -29,12 +34,6 @@ def redis():
 
 
 @pytest.fixture
-async def client(redis):
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-        yield c
-
-
-@pytest.fixture
 async def db_session_factory():
     """In-memory SQLite with the real models (no Postgres needed)."""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
@@ -42,3 +41,22 @@ async def db_session_factory():
         await conn.run_sync(Base.metadata.create_all)
     yield async_sessionmaker(engine, expire_on_commit=False)
     await engine.dispose()
+
+
+@pytest.fixture
+def enqueue_calls() -> list[tuple[str, dict[str, Any]]]:
+    return []
+
+
+@pytest.fixture
+async def client(redis, db_session_factory, enqueue_calls):
+    async def fake_enqueue(slug: str, problem: dict[str, Any]) -> bool:
+        enqueue_calls.append((slug, problem))
+        return True
+
+    app.dependency_overrides[get_session_factory] = lambda: db_session_factory
+    app.dependency_overrides[get_enqueue] = lambda: fake_enqueue
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+        yield c
+    app.dependency_overrides.pop(get_session_factory, None)
+    app.dependency_overrides.pop(get_enqueue, None)

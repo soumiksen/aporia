@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Protocol
+from typing import Protocol, cast
 
 from fastapi import Depends, Header, HTTPException
 from redis.asyncio import Redis
@@ -38,11 +38,11 @@ async def hit(redis: RedisLike, device_id: str, limit: int, now: float | None = 
 _client: Redis | None = None
 
 
-def get_redis() -> RedisLike:
+def get_redis() -> Redis:
     global _client
     if _client is None:
         _client = Redis.from_url(get_settings().redis_url)
-    return _client  # pyright: ignore[reportReturnType]
+    return _client
 
 
 async def require_device(x_aporia_device: str | None = Header(default=None)) -> str:
@@ -53,11 +53,11 @@ async def require_device(x_aporia_device: str | None = Header(default=None)) -> 
 
 async def enforce_rate_limit(
     device_id: str = Depends(require_device),
-    redis: RedisLike = Depends(get_redis),
+    redis: Redis = Depends(get_redis),
     settings: Settings = Depends(get_settings),
 ) -> str:
     try:
-        allowed = await hit(redis, device_id, settings.rate_limit_per_minute)
+        allowed = await hit(cast(RedisLike, redis), device_id, settings.rate_limit_per_minute)
     except Exception:
         # Fail open: a limiter outage must not block hints. /readyz reports Redis health.
         logger.warning("rate limiter unavailable; allowing request")

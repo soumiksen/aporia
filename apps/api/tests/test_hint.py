@@ -4,6 +4,7 @@ import pytest
 from httpx import AsyncClient
 
 from app.config import reset_settings
+from app.llm.gateway import MOCK_REPLY
 
 HEADERS = {"X-Aporia-Device": "device-1"}
 
@@ -46,7 +47,8 @@ async def test_streams_tokens_then_done(client: AsyncClient) -> None:
     done = events[-1][1]
     assert done["level"] == 1 and done["sources"] == []
     assert isinstance(done["hint_id"], str) and len(done["hint_id"]) == 36
-    assert "".join(str(d["text"]) for n, d in events if n == "token").startswith("What ")
+    assert "".join(str(d["text"]) for n, d in events if n == "token") == MOCK_REPLY
+    assert all(len(str(d["text"])) <= 20 for n, d in events if n == "token")  # 20-char chunks
 
 
 async def test_missing_device_header_is_400(client: AsyncClient) -> None:
