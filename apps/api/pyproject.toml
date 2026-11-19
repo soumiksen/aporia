@@ -5,11 +5,13 @@ description = "Aporia API"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "aiosqlite>=0.22.1",
     "alembic>=1.20.1",
     "arq>=0.28.0",
     "asyncpg>=0.32.0",
     "fastapi>=0.163.2",
     "httpx>=0.28.1",
+    "instructor>=1.17.0",
     "langfuse>=4.7,<5.0",
     "litellm>=1.110.0",
     "pydantic-settings>=2.16.3",
@@ -46,3 +48,8 @@ venv = ".venv"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "db: needs a reachable Postgres (skipped otherwise)",
+    "sandbox: needs a reachable Judge0 (skipped otherwise)",
+]

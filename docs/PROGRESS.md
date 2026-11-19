@@ -25,7 +25,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 1.10 Manual checklist for the user (written; **the user still has to run it**)
 
 ## Stage 2: Hint ladder and leak guard
-- [ ] 2.1 Database models and migration
+- [x] 2.1 Database models and migration
 - [ ] 2.2 Sandbox runner
 - [ ] 2.3 Reference-solution pipeline
 - [ ] 2.4 Hint ladder state machine
