@@ -8,13 +8,15 @@ cover synthetic fixtures, so **nothing below is verified until you run it and re
    ```
    cp .env.example .env     # set APORIA_LLM_MOCK=1 for canned tokens, or set APORIA_MODEL_FAST
    docker compose -f infra/docker-compose.yml up -d postgres redis
-   cd apps/api && uv run uvicorn app.main:app --reload
+   cd apps/api && uv run uvicorn app.main:app --reload --port 8000
    ```
    (If your host already uses 5432/6379, set `APORIA_POSTGRES_PORT`/`APORIA_REDIS_PORT` and the
    matching `DATABASE_URL`/`REDIS_URL`.) For a real model, put a provider model string in
    `APORIA_MODEL_FAST` and the provider key in your environment (for example the variable your
    LiteLLM provider expects).
-2. Build the dev extension (adds the localhost API permission):
+   If something else already uses port 8000 (a 404 from the panel usually means this), pick another
+   port, for example `--port 8001`, and use the same port in the next step.
+2. Build the dev extension (adds the localhost API permission; match the port above):
    `VITE_API_URL=http://localhost:8000 pnpm --filter extension build:dev`
 3. Chrome -> `chrome://extensions` -> enable Developer mode -> Load unpacked ->
    `apps/extension/.output/chrome-mv3-dev`. Sign in to leetcode.com in the same profile.
