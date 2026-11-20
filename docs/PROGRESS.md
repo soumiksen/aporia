@@ -35,7 +35,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 2.8 Extension: ladder UI
 
 ## Stage 3: Execution-grounded hints and stuck detection
-- [ ] 3.1 Batch execution
+- [x] 3.1 Batch execution
 - [ ] 3.2 Failing-case finder
 - [ ] 3.3 Shrinker
 - [ ] 3.4 Grounded hint generation
