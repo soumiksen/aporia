@@ -20,7 +20,19 @@ def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(Settings.model_config, "env_file", None)
     monkeypatch.setenv("APORIA_LLM_MOCK", "1")
     monkeypatch.setenv("APORIA_ENV", "dev")
-    for var in ("APORIA_MODEL_FAST", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
+    # Importing litellm runs python-dotenv, which can pull a developer's real .env (model names,
+    # provider keys) into os.environ. Clear everything that could reach a real provider.
+    for var in (
+        "APORIA_MODEL_FAST",
+        "APORIA_MODEL_STRONG",
+        "APORIA_MODEL_JUDGE",
+        "LANGFUSE_PUBLIC_KEY",
+        "LANGFUSE_SECRET_KEY",
+        "GEMINI_API_KEY",
+        "GOOGLE_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+    ):
         monkeypatch.delenv(var, raising=False)
     reset_settings()
     yield
