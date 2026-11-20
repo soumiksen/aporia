@@ -176,3 +176,62 @@ and all 10 red-team reference modules pass the same verification (400+ agreeing 
 `HintRequest.failed_attempts`/`last_verdict`, `done.supported`, `POST /v1/hint/{id}/rating`,
 `POST /v1/internal/reference/{slug}`. Regenerate with `pnpm gen:api` (done).
 
+## Stage 3 hand-off notes
+
+### Verified commands (2026-11-20)
+- `pnpm turbo run lint typecheck test build`: passes (extension: 150 Vitest tests).
+- `pnpm --filter extension e2e`: 14 Playwright tests pass (adds nudge Yes / Not now / Never /
+  auto-dismiss, consent card, and a canary check that opted-in events carry no code or problem text).
+- `cd apps/api && uv run ruff check . && uv run pyright && uv run pytest`: 329 passed, 2 skipped.
+- `pnpm eval:test`: 39 passed (adds the grounding measurement test).
+- `alembic upgrade head` -> `0004` on Postgres 16, downgrade/upgrade round trip, `alembic check`
+  clean; the `-m db` round trip (hints.grounded, events) passes against the container.
+
+### Grounding on the synthetic problem set (offline, real execution)
+`uv --directory apps/api run python ../../evals/grounding/measure.py`
+- **Success rate: 10 of 10 (100%)**, one plausible wrong student attempt per problem.
+- Minimal failing inputs of 3 to 15 JSON characters (for example `[[0, 0, 0], 0]` for the Pair Count
+  fixture, which needs exactly three elements).
+- **Typical latency: median 0.18 s, max 0.55 s** with the local subprocess runner. This does NOT
+  include Judge0 network overhead; the 12 s budget caps it. Real latency on Judge0 is unmeasured
+  because Judge0 cannot run on this host (Docker Desktop, cgroup v2).
+- Synthetic wrong solutions are plausible but small; real student code has more variety.
+
+### Stuck thresholds in use (`src/lib/stuck/rules.ts`, `policy.ts`)
+Stuck if any of: 3+ consecutive failed submissions; same failing verdict and same last testcase
+twice in a row; no edits and no runs for 4 minutes (tab visible, system not idle; the clock restarts
+when the tab or system becomes active again); fewer than 20 changed characters over 10 minutes after
+at least 2 failed runs (and the tracker has observed a full 10 minutes). Cooldown 10 min after any
+nudge, snooze 30 min after "Not now" (or the 12 s auto-dismiss), "Never on this problem" persistent.
+Evaluated on every signal and every 15 s. "Were you actually stuck?": 30% after a dismissal, once
+per page load.
+
+### Data collected for a future learned stuck detector
+None yet. Telemetry is opt-in and off by default, there are no real users yet, and the `events` table
+only exists since migration 0004. Once people opt in it will hold `stuck_prompt_shown/accepted/
+dismissed` (with the rule that fired), `hint_requested`, `hint_rated` and `stuck_label`
+(`was_stuck` true/false) events: enough to compare the rules against user labels later. No code or
+problem text is ever stored in it.
+
+### Not verified / needs the user
+- **Nudge flow on the live site:** run the Stage 3 section of `docs/MANUAL_TESTS.md` (items 24 to
+  37). The rules were tested with synthetic fixtures and fake timers only; whether real LeetCode
+  run/submit responses match what the detector expects (status messages, `last_testcase`) is
+  unconfirmed.
+- **`chrome.idle`:** the relay is built and typed but only exercised in unit tests (the e2e browser
+  never goes idle). Check items 30 and 31.
+- **Real grounding end to end:** needs Judge0 on a cgroup-v1 Linux host plus a real model and a
+  verified reference (built by the Arq worker). Everything is tested with the real harness through a
+  local subprocess runner and a scripted model.
+- **PostHog forwarding** is tested against a mock HTTP transport only (no real PostHog project).
+- **Sentry** is tested with a capturing transport only (no real DSN).
+- CI jobs (including the longer e2e job) have still not run on GitHub.
+
+### Notes
+- New permissions: `idle`. The background worker is now a module worker (lazy Sentry chunk).
+- New environment variables: `SENTRY_DSN`, `VITE_SENTRY_DSN`, `POSTHOG_API_KEY`, `POSTHOG_HOST`,
+  `GROUNDING_BUDGET_S`, `APORIA_PROMPT_VERSION` (default `v2`; use `v1` to reproduce Stage 2 evals),
+  `APORIA_LLM_EXTRA_PARAMS`.
+- Red-team results measured on the Stage 2 prompts (v1) are not comparable with v2 prompts; rerun
+  the suite with `APORIA_PROMPT_VERSION=v1` for a like-for-like comparison, or re-baseline.
+

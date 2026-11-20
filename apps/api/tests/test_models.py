@@ -1,5 +1,6 @@
 import socket
 import uuid
+from datetime import UTC, datetime
 from urllib.parse import urlparse
 
 import pytest
@@ -7,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.config import get_settings
-from app.models import Attempt, Base, Hint, Problem, ReferenceSolution, TestCase
+from app.models import Attempt, Base, Event, Hint, Problem, ReferenceSolution, TestCase
 
 
 async def round_trip(session: AsyncSession) -> None:
@@ -43,6 +44,17 @@ async def round_trip(session: AsyncSession) -> None:
             text="What happens with zero?",
             guard_decision={"leaks": False},
             rewrite_count=1,
+            grounded=True,
+            failure_kind="wrong_answer",
+        )
+    )
+    session.add(
+        Event(
+            device_hash="abc",
+            type="hint_requested",
+            slug="synthetic-sum",
+            props={"level": 2},
+            ts=datetime(2026, 11, 20, 12, 0, tzinfo=UTC),
         )
     )
     session.add(
@@ -59,13 +71,22 @@ async def round_trip(session: AsyncSession) -> None:
     problem = await session.get(Problem, "synthetic-sum")
     assert problem is not None and problem.tags == ["Array"] and problem.supported is True
     assert problem.created_at is not None
-    ref = (await session.scalars(select(ReferenceSolution))).one()
+    ref = (
+        await session.scalars(
+            select(ReferenceSolution).where(ReferenceSolution.problem_slug == "synthetic-sum")
+        )
+    ).one()
     assert ref.status == "verified" and ref.examples == [{"args": [1, 2], "expected": 3}]
-    case = (await session.scalars(select(TestCase))).one()
+    case = (
+        await session.scalars(select(TestCase).where(TestCase.problem_slug == "synthetic-sum"))
+    ).one()
     assert case.args == [1, 2] and case.expected == 3
     hint = await session.get(Hint, hint_id)
     assert hint is not None and hint.rating is None and hint.guard_decision == {"leaks": False}
-    attempt = (await session.scalars(select(Attempt))).one()
+    assert hint.grounded is True and hint.failure_kind == "wrong_answer"
+    event = (await session.scalars(select(Event).where(Event.device_hash == "abc"))).one()
+    assert event.type == "hint_requested" and event.props == {"level": 2} and event.id is not None
+    attempt = (await session.scalars(select(Attempt).where(Attempt.code_hash == "deadbeef"))).one()
     assert attempt.failing_case == [1, 2] and attempt.code_hash == "deadbeef"
 
 

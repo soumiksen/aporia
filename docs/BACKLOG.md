@@ -37,3 +37,11 @@
 - Surface "guard rewrote this hint" to the student only as telemetry, never in the panel.
 - A classifier-first guard (Stage 5) to cut judge latency and cost.
 
+## Ideas parked during Stage 3
+- Ground more than Python: other languages need their own harness and runner.
+- Use the shrunk failing input to pick which concept note to retrieve (Stage 4).
+- Learned stuck detector (LightGBM) trained on `stuck_label` events, compared with the rules.
+- Make the `events` flush interval and the nudge thresholds configurable from the options page.
+- Real Judge0 on Linux in CI so the sandbox integration test and grounding run for real.
+- Per-session (not just per-page-load) limit for the "Were you actually stuck?" question.
+
