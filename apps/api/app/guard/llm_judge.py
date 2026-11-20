@@ -1,7 +1,8 @@
+import json
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -11,6 +12,7 @@ from app.llm.prompts import load_prompt, render
 
 logger = logging.getLogger("aporia.guard")
 
+NO_FAILING_CASE_TEXT = "(none)"
 NO_REFERENCE_TEXT = "(none: no verified reference exists; judge against the problem statement only)"
 
 
@@ -34,13 +36,14 @@ class JudgeInput:
     tags: list[str]
     content_text: str
     reference_source: str | None
+    failing_case: dict[str, Any] | None = None  # input, expected, actual, kind (guard only)
 
 
 Judge = Callable[[JudgeInput], Awaitable[GuardVerdict]]
 
 
 def build_judge_messages(inp: JudgeInput) -> list[dict[str, str]]:
-    system, template = load_prompt("guard_judge_v1")
+    system, template = load_prompt("guard_judge_v2")
     user = render(
         template,
         {
@@ -50,6 +53,9 @@ def build_judge_messages(inp: JudgeInput) -> list[dict[str, str]]:
             "tags": ", ".join(inp.tags),
             "content_text": inp.content_text,
             "reference": inp.reference_source or NO_REFERENCE_TEXT,
+            "failing_case": json.dumps(inp.failing_case, default=str)
+            if inp.failing_case
+            else NO_FAILING_CASE_TEXT,
             "draft": inp.draft,
         },
     )

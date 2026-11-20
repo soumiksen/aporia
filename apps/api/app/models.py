@@ -65,6 +65,9 @@ class Hint(Base):
     guard_decision: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
     rewrite_count: Mapped[int] = mapped_column(Integer, default=0)
     rating: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # True when the hint cites a real minimal failing case found by running the student's code
+    grounded: Mapped[bool] = mapped_column(Boolean, default=False)
+    failure_kind: Mapped[str | None] = mapped_column(String, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 

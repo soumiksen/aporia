@@ -18,6 +18,7 @@ MAX_BATCH = 8  # candidates evaluated in parallel per round (small: keeps the 15
 
 StillFails = Callable[[list[Any]], Awaitable[list[bool]]]
 Validate = Callable[[Any], bool]
+ValidateBatch = Callable[[list[Any]], Awaitable[list[bool]]]
 
 
 @dataclass
@@ -166,8 +167,14 @@ async def shrink(
     still_fails: StillFails,
     validate: Validate,
     budget: Budget | None = None,
+    *,
+    validate_batch: ValidateBatch | None = None,
 ) -> ShrinkResult:
     """Returns the smallest failing input found. Candidates that `validate` rejects are never run.
+
+    `validate` is a cheap synchronous check. `validate_batch` is an optional asynchronous second
+    check (for example the reference module's own validate(args) running in the sandbox); it is
+    applied to each round's candidates before they are evaluated and is not counted as evaluations.
 
     Each round tries a batch of candidates in parallel and moves to the smallest one that still
     fails. Stops at a local minimum, or when the budget (150 evaluations / 15 s) is spent.
@@ -194,6 +201,11 @@ async def shrink(
             batch.append(candidate)
             if len(batch) >= limit:
                 break
+        if batch and validate_batch is not None:
+            accepted = await validate_batch(batch)
+            batch = [c for c, ok in zip(batch, accepted, strict=True) if ok]
+            if not batch:
+                continue  # every candidate of this round was invalid; try the next ones
         if not batch:
             break  # nothing left to try: current is a local minimum
         flags = await still_fails(batch)

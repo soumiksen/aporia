@@ -38,12 +38,13 @@ async def check(
     problem: ProblemContext,
     reference_source: str | None,
     judge: Judge,
+    failing_case: dict[str, Any] | None = None,
 ) -> GuardDecision:
     """Heuristics first (cheap, deterministic); the LLM judge runs only if they pass.
 
     Raises if the judge fails: the caller must treat any exception as "cannot approve".
     """
-    heuristic = check_heuristics(draft, level, reference_source)
+    heuristic = check_heuristics(draft, level, reference_source, failing_case)
     if heuristic.blocked:
         return GuardDecision(
             leaks=True,
@@ -61,6 +62,7 @@ async def check(
             tags=problem.tags,
             content_text=problem.content_text,
             reference_source=reference_source,
+            failing_case=failing_case,
         )
     )
     return GuardDecision(

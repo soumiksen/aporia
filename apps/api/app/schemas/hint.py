@@ -32,6 +32,8 @@ class DoneEvent(BaseModel):
     level: int
     sources: list[str] = Field(default_factory=list)
     supported: bool = True  # False: prompt-only hints, code cannot be run for this problem
+    grounded: bool = False  # True: the hint cites a real minimal failing case
+    failure_kind: str | None = None  # wrong_answer | runtime_error | timeout when grounded
 
 
 class ErrorEvent(BaseModel):

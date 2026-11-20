@@ -93,3 +93,26 @@
   counts as leaked if either flags it.
 - The Stage 1 prompt `hint_v0` was replaced by `hint_l1_v1` ... `hint_l4_v1`.
 
+## Stage 3 implementation decisions (2026-11-20)
+- **Grounded semantics:** `done.grounded` is true only when a real failing case was found and is
+  cited by the hint. "No failing input found" (prompt tells the model not to claim correctness) and
+  every error path (timeout, sandbox error, no reference, non-Python) report `grounded: false`.
+- **Sandbox error vs. invariant 5:** Stage 3 says grounding errors continue prompt-only. The reply
+  is still generated through the leak guard, so it is never a raw model reply; guard errors still
+  return the deterministic safe hint.
+- **Grounding runs at every level** (so the failure kind and the attempts row are recorded), but
+  level 1 prompts reveal nothing from it. Levels 2-4 may show the minimal input and the student's
+  actual output. The expected output and the reference code reach only the guard (`GuardFacts`).
+- **Shrinker validation:** the reference module's `validate(args)` runs in the sandbox (new harness
+  mode `validate`), so the shrinker takes an optional async `validate_batch`. Candidate batches are
+  8 (not larger) so the 150-evaluation budget is spent on the most aggressive candidates first.
+  Integers shrink with geometrically decreasing steps and ties prefer smaller magnitude.
+  "Still fails" requires the same failure kind, so a wrong answer never morphs into a crash.
+- **Expected-output check** (`reveals_expected_output`): a cue phrase ("expected", "should return",
+  "the answer is" ...) followed by the expected value, or a long structured value appearing outside
+  the input quote. Deliberately conservative: false positives cost only a rewrite or safe hint.
+- Prompt versions: `hint_l*_v2` (with `{grounding}`) are the default via `APORIA_PROMPT_VERSION`;
+  v1 stays for evals. `guard_judge_v2` receives the failing case.
+- `attempts` rows are written for every hint request (hash of the code, verdict, failing input
+  only). `POST /v1/hints/{id}/rating` is added next to the Stage 2 route in task 3.6.
+

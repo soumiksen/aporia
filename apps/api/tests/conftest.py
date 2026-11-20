@@ -11,6 +11,9 @@ from app.main import app
 from app.models import Base
 from app.ratelimit import get_redis
 from app.reference.queue import get_enqueue
+from app.sandbox.base import SandboxError
+from app.sandbox.fake import FakeRunner
+from app.sandbox.provider import get_runner
 
 
 @pytest.fixture(autouse=True)
@@ -70,7 +73,11 @@ async def client(redis, db_session_factory, enqueue_calls):
 
     app.dependency_overrides[get_session_factory] = lambda: db_session_factory
     app.dependency_overrides[get_enqueue] = lambda: fake_enqueue
+    # By default there is no sandbox in tests: grounding degrades to prompt-only.
+    no_sandbox = FakeRunner([SandboxError("no sandbox in tests")])
+    app.dependency_overrides[get_runner] = lambda: no_sandbox
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
         yield c
     app.dependency_overrides.pop(get_session_factory, None)
     app.dependency_overrides.pop(get_enqueue, None)
+    app.dependency_overrides.pop(get_runner, None)

@@ -172,3 +172,35 @@ def test_candidate_generators_are_pure_and_smaller() -> None:
     out = list(candidates(lst))
     assert lst == [1, 2, 3, 4] and [3, 4] in out and [1, 2] in out and [1, 3, 4] in out
     assert all(c != lst for c in out)
+
+
+async def test_async_batch_validation_filters_candidates_without_counting_evaluations() -> None:
+    seen_by_validator: list[list[Any]] = []
+
+    async def validate_batch(batch: list[Any]) -> list[bool]:
+        seen_by_validator.extend(batch)
+        return [len(c[0]) >= 2 for c in batch]  # e.g. the reference module's validate(args)
+
+    still = predicate(lambda a: sum(a[0]) > 10)
+    result = await shrink([[9, 8, 7, 6]], still, always_valid, validate_batch=validate_batch)
+    assert len(result.input[0]) >= 2
+    assert all(len(c[0]) >= 2 for c in still.calls)  # type: ignore[attr-defined]
+    assert len(seen_by_validator) > len(still.calls)  # type: ignore[attr-defined]
+
+
+async def test_rounds_where_everything_is_invalid_do_not_stop_the_search() -> None:
+    rejected_first = {"n": 0}
+
+    async def validate_batch(batch: list[Any]) -> list[bool]:
+        if rejected_first["n"] < 2:
+            rejected_first["n"] += 1
+            return [False] * len(batch)
+        return [True] * len(batch)
+
+    result = await shrink(
+        [[9, 8, 7, 6]],
+        predicate(lambda a: sum(a[0]) > 10),
+        always_valid,
+        validate_batch=validate_batch,
+    )
+    assert len(result.input[0]) <= 2

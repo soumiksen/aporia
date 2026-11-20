@@ -1,7 +1,8 @@
 """Harness that runs inside the sandbox, plus helpers to build programs and parse results.
 
 The harness is a string template (it never runs in the API process). stdin is JSON:
-  {"mode": "student" | "reference" | "reference_brute", "method": str, "cases": [args, ...]}
+  {"mode": "student" | "reference" | "reference_brute" | "validate", "method": str,
+   "cases": [args, ...]}   ("validate" calls the module's validate(args) for each case)
   {"mode": "gen", "seed": int, "sizes": {"tiny": n, "small": n, "large": n}}
 The last stdout line is a JSON list. Student/reference output per case: {ok, out, err, ms}.
 gen output per generated case: {size, args, valid, err}.
@@ -87,6 +88,11 @@ def main():
                     item["err"] = checked["err"]
                 results.append(item)
         _emit(results)
+        return
+
+    if mode == "validate":
+        validator = namespace["validate"]
+        _emit([_call(lambda *a: validator(list(a)), args) for args in request["cases"]])
         return
 
     if mode == "student":

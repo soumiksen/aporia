@@ -9,6 +9,8 @@ from fastapi.responses import StreamingResponse
 
 from app.config import Settings, get_settings
 from app.db import get_session_factory
+from app.grounding.context import render_for_prompt
+from app.grounding.service import ground
 from app.guard.guard import GuardDecision, GuardedResult, check, guard_enabled, guarded_reply
 from app.guard.llm_judge import Judge, get_judge
 from app.hints.ladder import after_hint, next_level, with_attempts
@@ -19,12 +21,15 @@ from app.hints.service import (
     device_hash,
     lookup_problem,
     rate_hint,
+    save_attempt,
     save_hint,
 )
 from app.hints.state_store import load_state, save_state
 from app.llm.gateway import LLMConfigError, complete, ensure_configured
 from app.ratelimit import enforce_rate_limit, get_redis, require_device
 from app.reference.queue import Enqueue, get_enqueue
+from app.sandbox.base import SandboxRunner
+from app.sandbox.provider import get_runner
 from app.schemas.hint import DoneEvent, ErrorEvent, HintRequest, RatingRequest, TokenEvent
 
 router = APIRouter(prefix="/v1")
@@ -65,6 +70,7 @@ async def post_hint(
     enqueue: Enqueue = Depends(get_enqueue),
     generator: Generator = Depends(get_generator),
     judge: Judge = Depends(get_judge),
+    runner: SandboxRunner = Depends(get_runner),
     settings: Settings = Depends(get_settings),
     x_aporia_disable_guard: str | None = Header(default=None),
 ) -> StreamingResponse:
@@ -87,19 +93,41 @@ async def post_hint(
         await load_state(redis_client, device, slug), body.failed_attempts, body.last_verdict
     )
     level = next_level(state, body.level, body.failed_attempts)
+    # Execution grounding (Python, supported problem, verified reference), 12 s total budget. Any
+    # failure continues prompt-only: the reply is still generated and still guarded.
+    grounding = await ground(
+        body.problem.model_dump(),
+        body.code,
+        body.language,
+        info.reference,
+        runner,
+        total_budget_s=settings.grounding_budget_s,
+    )
+    grounding_text = render_for_prompt(grounding.context, level)
+    failing_case = grounding.facts.as_dict() if grounding.facts else None
+    failure_kind = grounding.failure.kind if grounding.failure else None
     guard_on = guard_enabled(settings, x_aporia_disable_guard)
     metadata: dict[str, Any] = {"hint_id": hint_id, "level": level, "device_hash": device}
     logger.info(
-        "hint requested slug=%s level=%d hint_id=%s guard=%s", slug, level, hint_id, guard_on
+        "hint requested slug=%s level=%d hint_id=%s guard=%s grounding=%s kind=%s ms=%d",
+        slug,
+        level,
+        hint_id,
+        guard_on,
+        ("error:" + grounding.error) if grounding.error else grounding.attempted,
+        failure_kind,
+        grounding.elapsed_ms,
     )
 
     async def generate(feedback: str | None) -> str:
         return await generator(
-            build_messages(body, level, feedback), "APORIA_MODEL_FAST", metadata=metadata
+            build_messages(body, level, feedback, grounding_text),
+            "APORIA_MODEL_FAST",
+            metadata=metadata,
         )
 
     async def check_draft(draft: str) -> GuardDecision:
-        return await check(draft, level, body.problem, info.reference_source, judge)
+        return await check(draft, level, body.problem, info.reference_source, judge, failing_case)
 
     async def events() -> AsyncIterator[str]:
         try:
@@ -125,10 +153,28 @@ async def post_hint(
             text=result.text,
             decision=result.decision,
             rewrite_count=result.rewrite_count,
+            grounded=grounding.grounded,
+            failure_kind=failure_kind,
+        )
+        await save_attempt(
+            factory,
+            device=device,
+            slug=slug,
+            code=body.code,
+            verdict=body.last_verdict or failure_kind or "unknown",
+            failing_case={"kind": failure_kind, "input": grounding.failure.input}
+            if grounding.failure
+            else None,
         )
         for chunk in chunk_text(result.text):
             yield sse("token", TokenEvent(text=chunk).model_dump_json())
-        done = DoneEvent(hint_id=hint_id, level=level, supported=info.supported)
+        done = DoneEvent(
+            hint_id=hint_id,
+            level=level,
+            supported=info.supported,
+            grounded=grounding.grounded,
+            failure_kind=failure_kind,
+        )
         yield sse("done", done.model_dump_json())
 
     return StreamingResponse(

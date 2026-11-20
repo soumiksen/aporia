@@ -282,3 +282,14 @@ async def test_judge0_integration_runs_trivial_program() -> None:
             pytest.skip(f"Judge0 is up but cannot execute on this host: {exc}")
         raise
     assert result.stdout.strip() == "2" and result.exit_code == 0
+
+
+async def test_validate_mode_calls_the_modules_validate() -> None:
+    out = await run_cases(
+        SubprocessRunner(),
+        mode="validate",
+        source=MODULE,
+        method="",
+        cases=[[[1, 2], 1], [[1], 1], [[1, 2], 0]],
+    )
+    assert [r.out for r in out] == [True, False, False]

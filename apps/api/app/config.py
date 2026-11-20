@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 30
     # LiteLLM retries (with backoff, honouring provider retry hints) for rate limits and 5xx.
     llm_num_retries: int = 4
+    grounding_budget_s: float = 12.0  # total wall-clock budget for execution grounding
+    aporia_prompt_version: str = "v2"  # hint_l*_<version>.md; v1 is kept for evals
     # Extra provider parameters passed to every LiteLLM call, as JSON, e.g. {"think": false} to
     # switch off reasoning on local Ollama models. Never put secrets here.
     aporia_llm_extra_params: dict[str, Any] = {}

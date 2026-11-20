@@ -2,11 +2,13 @@
 
 import ast
 import builtins
+import json
 import re
 import textwrap
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
+from typing import Any
 
 SIMILARITY_THRESHOLD = 0.6  # block when AST similarity to the reference reaches this
 MAX_CODE_LINES_LEVELS_1_3 = 3  # a fenced block longer than this is blocked at levels 1 to 3
@@ -187,6 +189,57 @@ def max_similarity(text: str, reference_source: str | None) -> float:
     return max((ast_similarity(c, reference) for c in python_candidates(text)), default=0.0)
 
 
+# ---- expected-output reveal (execution-grounded hints) ----
+
+EXPECTED_CUES = (
+    r"expected|should (?:return|be|output|give|print|produce|equal|yield)|"
+    r"correct (?:answer|output|result|value)|right answer|answer is|result is|output is|returns?"
+)
+MIN_STANDALONE_CHARS = 6
+FILLER_WORDS = 3  # words allowed between a cue phrase and the value ("answer for this is 3")
+
+
+def _norm(text: str) -> str:
+    """Lowercase, single spaces, and no spaces around JSON punctuation ("[0, 1]" == "[0,1]")."""
+    text = re.sub(r"\s+", " ", text.lower()).strip()
+    text = re.sub(r"\s*([,:])\s*", r"\1", text)  # "a, b" and "a : b"
+    text = re.sub(r"([\[{])\s+", r"\1", text)  # "[ 1" -> "[1" (not the space before "[")
+    return re.sub(r"\s+([\]}])", r"\1", text)  # "1 ]" -> "1]"
+
+
+def _spellings(value: Any) -> set[str]:
+    """Spellings of a JSON value a reply might use: JSON, Python repr, unquoted string."""
+    out = {_norm(json.dumps(value, separators=(",", ":"))), _norm(repr(value))}
+    if isinstance(value, str):
+        out.add(_norm(value))
+    return {t for t in out if t}
+
+
+def reveals_expected_output(
+    draft: str, expected: Any, actual: Any = None, failing_input: Any = None
+) -> bool:
+    """True if the draft states the expected output of the failing input.
+
+    Two rules on normalized text: (1) the expected value follows a cue such as "expected",
+    "should return" or "the answer is" (up to three filler words in between); (2) a long, structured
+    expected value (6+ characters, e.g. [[0,1],[2,3]]) appears anywhere, unless it is just a quote
+    of the input. The student's own actual output is never treated as a reveal.
+    """
+    text = _norm(draft)
+    actual_tokens = _spellings(actual) if actual is not None else set()
+    input_text = _norm(json.dumps(failing_input)) if failing_input is not None else ""
+    for token in _spellings(expected) - actual_tokens:
+        cue = (
+            rf"(?:{EXPECTED_CUES})(?: [a-z']+){{0,{FILLER_WORDS}}}"
+            rf"[^a-z0-9\[\]{{}}\"']{{0,6}}[\"'`]?{re.escape(token)}(?![a-z0-9]|\.\d)"
+        )
+        if re.search(cue, text):
+            return True
+        if len(token) >= MIN_STANDALONE_CHARS and token in text and token not in input_text:
+            return True
+    return False
+
+
 # ---- the combined check ----
 
 
@@ -211,9 +264,17 @@ def asserts_correctness(text: str) -> bool:
 
 
 def check_heuristics(
-    draft: str, level: int, reference_source: str | None = None
+    draft: str,
+    level: int,
+    reference_source: str | None = None,
+    failing_case: dict[str, Any] | None = None,
 ) -> HeuristicResult:
     result = HeuristicResult()
+
+    if failing_case and reveals_expected_output(
+        draft, failing_case.get("expected"), failing_case.get("actual"), failing_case.get("input")
+    ):
+        result.reasons.append("reveals_expected_output")
 
     if level <= 3:
         too_long = [
