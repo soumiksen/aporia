@@ -35,7 +35,16 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 2.8 Extension: ladder UI
 
 ## Stage 3: Execution-grounded hints and stuck detection
-- [ ] (task IDs to be added from stage3.md)
+- [ ] 3.1 Batch execution
+- [ ] 3.2 Failing-case finder
+- [ ] 3.3 Shrinker
+- [ ] 3.4 Grounded hint generation
+- [ ] 3.5 Stuck detector (extension)
+- [ ] 3.6 Nudge UI
+- [ ] 3.7 Consent and events
+- [ ] 3.8 Error tracking
+- [ ] 3.9 Optional: PostHog forwarding
+- [ ] 3.10 Documentation
 
 ## Stage 4: Learner model, semantic search, and RAG
 - [ ] (task IDs to be added from stage4.md)
