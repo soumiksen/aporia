@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 
 from app.api import events, health, hint, internal
+from app.config import get_settings
+from app.observability import init_sentry
+
+init_sentry(get_settings())  # no-op without SENTRY_DSN
 
 app = FastAPI(title="Aporia API", version="0.1.0")
 app.include_router(health.router)

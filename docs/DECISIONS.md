@@ -115,4 +115,12 @@
   v1 stays for evals. `guard_judge_v2` receives the failing case.
 - `attempts` rows are written for every hint request (hash of the code, verdict, failing input
   only). `POST /v1/hints/{id}/rating` is added next to the Stage 2 route in task 3.6.
+- **Error tracking (3.8):** Sentry is on only when `SENTRY_DSN` (API) or `VITE_SENTRY_DSN`
+  (extension build) is set; it is not tied to the telemetry consent card, because the stage plan
+  gates it on the DSN alone and reports are scrubbed (request bodies dropped, fields `code`,
+  `content_text`, `student_message` and identifying headers filtered, no stack-frame variables).
+  Free-text exception messages are not scrubbed, so code must never be put in an exception message.
+  The extension reports background and options-page errors only (content-script errors run in the
+  page and are not collected). The background worker is a module worker so the Sentry SDK ships as
+  a lazily loaded chunk that DSN-less builds never load.
 

@@ -35,6 +35,7 @@ class Settings(BaseSettings):
     # switch off reasoning on local Ollama models. Never put secrets here.
     aporia_llm_extra_params: dict[str, Any] = {}
     aporia_internal_token: str = ""
+    sentry_dsn: str = ""  # error tracking is off unless this is set
 
 
 def export_provider_keys(files: tuple[str, ...] | str | None) -> None:
