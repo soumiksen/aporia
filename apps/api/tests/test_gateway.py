@@ -31,6 +31,7 @@ async def test_real_mode_uses_env_model_and_streams(monkeypatch: pytest.MonkeyPa
     out = [t async for t in stream_completion([{"role": "user", "content": "hi"}])]
     assert out == ["a", "b"]
     assert seen["model"] == "provider/test-model" and seen["stream"] is True
+    assert seen["num_retries"] == 4  # provider rate limits are retried with backoff
 
 
 async def test_unset_model_raises_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:

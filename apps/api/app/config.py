@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     aporia_trace_code: bool = False
 
     rate_limit_per_minute: int = 30
+    # LiteLLM retries (with backoff, honouring provider retry hints) for rate limits and 5xx.
+    llm_num_retries: int = 4
     aporia_internal_token: str = ""
 
 

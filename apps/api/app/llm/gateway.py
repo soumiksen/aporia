@@ -68,7 +68,11 @@ async def stream_completion(
 
     configure_tracing()
     response = await litellm.acompletion(
-        model=model, messages=messages, stream=True, metadata=metadata or {}
+        model=model,
+        messages=messages,
+        stream=True,
+        metadata=metadata or {},
+        num_retries=get_settings().llm_num_retries,
     )
     async for chunk in response:  # pyright: ignore[reportGeneralTypeIssues]
         delta = chunk.choices[0].delta.content
@@ -95,6 +99,11 @@ async def complete(
     from app.llm.tracing import configure_tracing
 
     configure_tracing()
-    response = await litellm.acompletion(model=model, messages=messages, metadata=metadata or {})
+    response = await litellm.acompletion(
+        model=model,
+        messages=messages,
+        metadata=metadata or {},
+        num_retries=get_settings().llm_num_retries,
+    )
     content = response.choices[0].message.content  # pyright: ignore[reportAttributeAccessIssue]
     return content or ""
