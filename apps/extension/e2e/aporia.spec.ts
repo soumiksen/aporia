@@ -147,3 +147,78 @@ test("failed verdicts are reported as failed attempts on the next hint", async (
   await expect(page.getByTestId("hint-view")).toContainText("element?");
   expect(api.requests[0]?.body.failed_attempts).toBe(3);
 });
+
+// ---- proactive nudge ----
+
+async function failSubmissions(page: import("@playwright/test").Page, times: number) {
+  const seen = () =>
+    page.evaluate(
+      () => (window as any).__bridge.filter((m: any) => m.type === "verdict").length as number,
+    );
+  const start = await seen();
+  for (let i = 1; i <= times; i += 1) {
+    await page.getByRole("button", { name: "Submit" }).click();
+    await expect.poll(seen).toBe(start + i);
+  }
+}
+
+const bubble = (page: import("@playwright/test").Page) => page.getByTestId("nudge-bubble");
+
+test("nudge: three failed submissions offer help, and only Yes opens a hint", async ({
+  page,
+  api,
+}) => {
+  await page.goto(PROBLEM);
+  await waitForCode(page);
+  await failSubmissions(page, 3);
+  await expect(bubble(page)).toContainText("Stuck? Want a nudge?");
+  await expect(page.getByRole("img", { name: /mascot, attentive/ })).toBeVisible();
+  expect(api.requests).toHaveLength(0); // the offer alone never asks for a hint
+
+  await page.getByRole("button", { name: "Yes" }).click();
+  await expect(page.getByTestId("hint-view")).toContainText("L1:");
+  expect(api.requests).toHaveLength(1);
+  expect(api.requests[0]?.body.level).toBe(1);
+  await expect(bubble(page)).toHaveCount(0);
+});
+
+test("nudge: Not now snoozes it, even after a reload", async ({ page, api }) => {
+  await page.goto(PROBLEM);
+  await waitForCode(page);
+  await failSubmissions(page, 3);
+  await bubble(page).getByRole("button", { name: "Not now" }).click();
+  await expect(bubble(page)).toHaveCount(0);
+
+  await failSubmissions(page, 2); // still stuck, but snoozed
+  await page.waitForTimeout(500);
+  await expect(bubble(page)).toHaveCount(0);
+
+  await page.reload();
+  await waitForCode(page);
+  await failSubmissions(page, 3);
+  await page.waitForTimeout(500);
+  await expect(bubble(page)).toHaveCount(0); // the snooze is stored, not just in memory
+  expect(api.requests).toHaveLength(0);
+});
+
+test("nudge: Never on this problem stays off after a reload", async ({ page }) => {
+  await page.goto(PROBLEM);
+  await waitForCode(page);
+  await failSubmissions(page, 3);
+  await bubble(page).getByRole("button", { name: "Never on this problem" }).click();
+  await expect(bubble(page)).toHaveCount(0);
+
+  await page.reload();
+  await waitForCode(page);
+  await failSubmissions(page, 3);
+  await page.waitForTimeout(500);
+  await expect(bubble(page)).toHaveCount(0); // stored for the slug, not just in memory
+});
+
+test("nudge: the bubble dismisses itself after 12 seconds", async ({ page }) => {
+  await page.goto(PROBLEM);
+  await waitForCode(page);
+  await failSubmissions(page, 3);
+  await expect(bubble(page)).toBeVisible();
+  await expect(bubble(page)).toHaveCount(0, { timeout: 15_000 });
+});

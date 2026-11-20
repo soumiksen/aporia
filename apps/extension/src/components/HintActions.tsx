@@ -6,10 +6,11 @@ export interface HintActionsProps {
   level: number;
   rated: boolean;
   onBigger: () => void;
-  onNotHelpful: () => void;
+  /** 5 for thumbs up, 1 for thumbs down. */
+  onRate: (rating: number) => void;
 }
 
-export function HintActions({ status, level, rated, onBigger, onNotHelpful }: HintActionsProps) {
+export function HintActions({ status, level, rated, onBigger, onRate }: HintActionsProps) {
   if (status !== "done") return null;
   const atTop = level >= MAX_LEVEL;
   return (
@@ -22,13 +23,24 @@ export function HintActions({ status, level, rated, onBigger, onNotHelpful }: Hi
           Thanks for the feedback
         </span>
       ) : (
-        <button
-          type="button"
-          onClick={onNotHelpful}
-          className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          Not helpful
-        </button>
+        <span className="flex gap-1">
+          <button
+            type="button"
+            aria-label="Helpful"
+            onClick={() => onRate(5)}
+            className="rounded px-1 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span aria-hidden="true">👍</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Not helpful"
+            onClick={() => onRate(1)}
+            className="rounded px-1 hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <span aria-hidden="true">👎</span>
+          </button>
+        </span>
       )}
     </div>
   );

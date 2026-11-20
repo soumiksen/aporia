@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useStore } from "zustand";
+import { track } from "@/lib/events/track";
 import { problemFromPage } from "@/lib/leetcode/metadata";
 import type { HintRequest } from "@/lib/messages";
 import { pageStore } from "@/lib/page-state";
@@ -64,6 +65,7 @@ export function useHint() {
     requestId.current = id;
     pageStore.setState({ failedSinceHint: 0 }); // the counter is "failures since the last hint"
     useHintStore.getState().start(request.level ?? 1);
+    track({ type: "hint_requested", slug: request.problem.slug, level: request.level });
     sendMessage("getHint", { requestId: id, request }).catch(() => {
       if (requestId.current !== id) return;
       useHintStore
@@ -76,6 +78,12 @@ export function useHint() {
     const { hintId, rated } = useHintStore.getState();
     if (!hintId || rated) return;
     useHintStore.getState().markRated();
+    track({
+      type: "hint_rated",
+      slug: pageStore.getState().slug ?? undefined,
+      level: useHintStore.getState().level,
+      rating,
+    });
     void sendMessage("rateHint", { hintId, rating }).catch(() => undefined);
   }, []);
 

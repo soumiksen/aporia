@@ -1,4 +1,4 @@
-export type MascotMood = "idle" | "thinking" | "happy" | "error";
+export type MascotMood = "idle" | "thinking" | "happy" | "error" | "attentive";
 
 export interface MascotProps {
   mood?: MascotMood;
@@ -10,6 +10,7 @@ export interface MascotProps {
 // This inline SVG rabbit is the fallback and keeps the same props a Rive version would take.
 export function Mascot({ mood = "idle", size = 48, className }: MascotProps) {
   const eyeY = mood === "happy" ? 33 : 34;
+  const eyeR = mood === "attentive" ? 3.5 : 2.5; // wide eyes when it wants to offer a nudge
   return (
     <svg
       width={size}
@@ -17,7 +18,10 @@ export function Mascot({ mood = "idle", size = 48, className }: MascotProps) {
       viewBox="0 0 64 64"
       role="img"
       aria-label={`Aporia mascot, ${mood}`}
-      className={className}
+      // Attentive motion only for people who have not asked for reduced motion.
+      className={[className, mood === "attentive" ? "motion-safe:animate-bounce" : ""]
+        .filter(Boolean)
+        .join(" ")}
       data-mood={mood}
     >
       <ellipse cx="22" cy="14" rx="6" ry="14" fill="#f4f1ec" stroke="#4a4458" strokeWidth="2" />
@@ -32,8 +36,8 @@ export function Mascot({ mood = "idle", size = 48, className }: MascotProps) {
         </>
       ) : (
         <>
-          <circle cx="26" cy={eyeY} r="2.5" fill="#4a4458" />
-          <circle cx="38" cy={eyeY} r="2.5" fill="#4a4458" />
+          <circle cx="26" cy={eyeY} r={eyeR} fill="#4a4458" />
+          <circle cx="38" cy={eyeY} r={eyeR} fill="#4a4458" />
         </>
       )}
       <ellipse cx="32" cy="42" rx="2.5" ry="2" fill="#f3b8c4" />

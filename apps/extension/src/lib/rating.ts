@@ -10,7 +10,7 @@ export interface RatingOptions {
 export async function postRating(opts: RatingOptions): Promise<boolean> {
   const fetchFn = opts.fetchFn ?? fetch;
   try {
-    const res = await fetchFn(`${opts.apiUrl}/v1/hint/${encodeURIComponent(opts.hintId)}/rating`, {
+    const res = await fetchFn(`${opts.apiUrl}/v1/hints/${encodeURIComponent(opts.hintId)}/rating`, {
       method: "POST",
       headers: { "content-type": "application/json", "x-aporia-device": opts.deviceId },
       body: JSON.stringify({ rating: opts.rating }),

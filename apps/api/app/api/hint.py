@@ -185,6 +185,7 @@ async def post_hint(
 
 
 @router.post("/hint/{hint_id}/rating", status_code=204)
+@router.post("/hints/{hint_id}/rating", status_code=204)
 async def post_rating(
     hint_id: uuid.UUID,
     body: RatingRequest,

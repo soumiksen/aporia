@@ -349,3 +349,8 @@ async def test_rating_requires_ownership_and_valid_value(
     assert (await client.post(url, json={"rating": 1}, headers=HEADERS)).status_code == 204
     async with db_session_factory() as session:
         assert (await session.scalars(select(Hint))).one().rating == 1
+    # the plural path used by the extension is the same endpoint
+    plural = f"/v1/hints/{hint_id}/rating"
+    assert (await client.post(plural, json={"rating": 5}, headers=HEADERS)).status_code == 204
+    async with db_session_factory() as session:
+        assert (await session.scalars(select(Hint))).one().rating == 5

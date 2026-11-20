@@ -10,7 +10,7 @@ describe("postRating", () => {
     );
     expect(await postRating({ ...base, fetchFn: f as unknown as typeof fetch })).toBe(true);
     const [url, init] = f.mock.calls[0] ?? [];
-    expect(url).toBe("http://api/v1/hint/h%2F1/rating");
+    expect(url).toBe("http://api/v1/hints/h%2F1/rating");
     expect(init?.method).toBe("POST");
     expect((init?.headers as Record<string, string>)["x-aporia-device"]).toBe("dev-1");
     expect(JSON.parse(String(init?.body))).toEqual({ rating: 1 });

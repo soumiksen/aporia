@@ -7,8 +7,11 @@ import type { MascotMood } from "@/components/Mascot";
 import { Panel } from "@/components/Panel";
 import { StudentMessageBox } from "@/components/StudentMessageBox";
 import { UnsupportedBanner } from "@/components/UnsupportedBanner";
+import { NudgeBubble } from "@/components/NudgeBubble";
+import { StuckLabelPrompt } from "@/components/StuckLabelPrompt";
 import { MAX_LEVEL, useHintStore } from "@/store/hint-store";
 import { useHint } from "./useHint";
+import { useStuckNudge } from "./useStuckNudge";
 
 export function App() {
   const [open, setOpen] = useState(false);
@@ -20,6 +23,15 @@ export function App() {
   const supported = useHintStore((s) => s.supported);
   const rated = useHintStore((s) => s.rated);
   const errorMessage = useHintStore((s) => s.errorMessage);
+
+  const nudge = useStuckNudge({
+    slug,
+    panelOpen: open,
+    onAccept: () => {
+      setOpen(true);
+      ask({ level: 1 }); // "Yes" is the only thing that ever opens a hint
+    },
+  });
 
   const onOpenChange = (next: boolean) => {
     setOpen(next);
@@ -45,7 +57,18 @@ export function App() {
           : "idle";
 
   return (
-    <Panel open={open} onOpenChange={onOpenChange} mood={mood}>
+    <Panel
+      open={open}
+      onOpenChange={onOpenChange}
+      mood={nudge.bubbleVisible && !open ? "attentive" : mood}
+      bubble={
+        nudge.bubbleVisible ? (
+          <NudgeBubble onYes={nudge.yes} onNotNow={nudge.notNow} onNever={nudge.never} />
+        ) : nudge.labelVisible ? (
+          <StuckLabelPrompt onAnswer={nudge.answerLabel} />
+        ) : null
+      }
+    >
       {!slug ? (
         <p className="text-sm text-muted-foreground">Open a problem to get started.</p>
       ) : (
@@ -70,7 +93,7 @@ export function App() {
             level={level}
             rated={rated}
             onBigger={onBigger}
-            onNotHelpful={() => rate(1)}
+            onRate={rate}
           />
           <StudentMessageBox value={message} onChange={setMessage} />
         </div>

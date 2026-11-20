@@ -7,16 +7,16 @@ import { useHintStore } from "@/store/hint-store";
 
 type Listener = (m: { data: { requestId: string; event: HintEvent } }) => void;
 const h = vi.hoisted(() => ({
-  listener: null as null | ((m: unknown) => void),
+  listeners: {} as Record<string, (m: unknown) => void>,
   sendMessage: vi.fn<(type: string, data?: unknown) => Promise<undefined>>(async () => undefined),
 }));
 
 vi.mock("@/lib/protocol", () => ({
   sendMessage: h.sendMessage,
-  onMessage: (_type: string, cb: (m: unknown) => void) => {
-    h.listener = cb;
+  onMessage: (type: string, cb: (m: unknown) => void) => {
+    h.listeners[type] = cb;
     return () => {
-      h.listener = null;
+      delete h.listeners[type];
     };
   },
 }));
@@ -26,13 +26,13 @@ import { App } from "./App";
 function emit(event: HintEvent) {
   const call = h.sendMessage.mock.calls.find((c) => c[0] === "getHint");
   const requestId = (call?.[1] as { requestId: string }).requestId;
-  act(() => (h.listener as Listener)({ data: { requestId, event } }));
+  act(() => (h.listeners.hintEvent as Listener)({ data: { requestId, event } }));
 }
 
 function emit2(event: HintEvent) {
   const calls = h.sendMessage.mock.calls.filter((c) => c[0] === "getHint");
   const requestId = (calls.at(-1)?.[1] as { requestId: string }).requestId;
-  act(() => (h.listener as Listener)({ data: { requestId, event } }));
+  act(() => (h.listeners.hintEvent as Listener)({ data: { requestId, event } }));
 }
 
 describe("App", () => {
@@ -46,7 +46,7 @@ describe("App", () => {
     render(<App />);
     await userEvent.click(screen.getByRole("button", { name: /ask aporia/i }));
     expect(screen.getByText("Open a problem to get started.")).toBeInTheDocument();
-    expect(h.sendMessage).not.toHaveBeenCalled();
+    expect(h.sendMessage.mock.calls.some((c) => c[0] === "getHint")).toBe(false);
   });
 
   it("sends getHint with the latest bridge state and streams text", async () => {

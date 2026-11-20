@@ -49,6 +49,8 @@ export const test = base.extend<{ context: BrowserContext; page: Page; api: Mock
         await route.fulfill({ json: graphqlBody(post.variables.titleSlug) });
       } else if (url.pathname.endsWith("/interpret_solution/")) {
         await route.fulfill({ json: { interpret_id: "runcode_1", test_case: "[1,2]" } });
+      } else if (url.pathname.endsWith("/submit/")) {
+        await route.fulfill({ json: { submission_id: 777 } });
       } else if (url.pathname.includes("/check/")) {
         await route.fulfill({
           json: {

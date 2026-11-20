@@ -25,7 +25,7 @@ describe("LevelBadge", () => {
 });
 
 describe("HintActions", () => {
-  const props = { rated: false, onBigger: vi.fn(), onNotHelpful: vi.fn() };
+  const props = { rated: false, onBigger: vi.fn(), onRate: vi.fn() };
 
   it("renders nothing until a hint is done", () => {
     for (const status of ["idle", "streaming", "error"] as const) {
@@ -44,15 +44,15 @@ describe("HintActions", () => {
     render(<HintActions {...props} status="done" level={4} />);
     expect(screen.getByRole("button", { name: "Need a bigger hint" })).toBeDisabled();
   });
-  it("offers a not-helpful link that becomes a thank-you once rated", async () => {
-    const onNotHelpful = vi.fn();
-    const { rerender } = render(
-      <HintActions {...props} onNotHelpful={onNotHelpful} status="done" level={1} />,
-    );
+  it("offers thumbs up (5) and thumbs down (1) that become a thank-you once rated", async () => {
+    const onRate = vi.fn();
+    const { rerender } = render(<HintActions {...props} onRate={onRate} status="done" level={1} />);
+    await userEvent.click(screen.getByRole("button", { name: "Helpful" }));
     await userEvent.click(screen.getByRole("button", { name: "Not helpful" }));
-    expect(onNotHelpful).toHaveBeenCalledTimes(1);
+    expect(onRate.mock.calls).toEqual([[5], [1]]);
     rerender(<HintActions {...props} rated status="done" level={1} />);
     expect(screen.queryByRole("button", { name: "Not helpful" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Helpful" })).toBeNull();
     expect(screen.getByRole("status")).toHaveTextContent("Thanks for the feedback");
   });
 });

@@ -5,11 +5,13 @@ export interface PanelProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mood?: MascotMood;
+  /** A small bubble shown above the mascot (the nudge offer). */
+  bubble?: ReactNode;
   children?: ReactNode;
 }
 
 /** Floating, collapsible panel anchored bottom-right. The mascot button toggles it. */
-export function Panel({ open, onOpenChange, mood = "idle", children }: PanelProps) {
+export function Panel({ open, onOpenChange, mood = "idle", bubble, children }: PanelProps) {
   return (
     <div className="aporia-root fixed right-4 bottom-4 z-[2147483000] flex flex-col items-end gap-2">
       {open && (
@@ -31,6 +33,7 @@ export function Panel({ open, onOpenChange, mood = "idle", children }: PanelProp
           {children}
         </section>
       )}
+      {!open && bubble}
       <button
         type="button"
         aria-label={open ? "Collapse Aporia" : "Ask Aporia for a hint"}

@@ -30,7 +30,7 @@ export async function startMockApi(port: number): Promise<MockApi> {
   const requests: RecordedRequest[] = [];
   const ratings: RecordedRating[] = [];
   const server: Server = createServer((req, res) => {
-    const rating = /^\/v1\/hint\/([^/]+)\/rating$/.exec(req.url ?? "");
+    const rating = /^\/v1\/hints?\/([^/]+)\/rating$/.exec(req.url ?? "");
     if (req.method === "POST" && rating) {
       let raw = "";
       req.on("data", (c: Buffer) => (raw += c.toString()));
