@@ -1,5 +1,8 @@
+import os
 from functools import lru_cache
+from pathlib import Path
 
+from dotenv import dotenv_values
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -26,8 +29,27 @@ class Settings(BaseSettings):
     aporia_internal_token: str = ""
 
 
+def export_provider_keys(files: tuple[str, ...] | str | None) -> None:
+    """Copies `*_API_KEY` / `*_API_BASE` entries from the env files into the process environment.
+
+    LiteLLM reads provider keys from `os.environ`, but pydantic settings only load declared
+    fields. Real environment variables win (`setdefault`). Nothing else is exported, so model
+    names and flags in `.env` still go through `Settings` only.
+    """
+    if not files:
+        return
+    for name in (files,) if isinstance(files, str) else files:
+        path = Path(name)
+        if not path.is_file():
+            continue
+        for key, value in dotenv_values(path).items():
+            if value and key.upper().endswith(("_API_KEY", "_API_BASE")):
+                os.environ.setdefault(key, value)
+
+
 @lru_cache
 def _cached_settings() -> Settings:
+    export_provider_keys(Settings.model_config.get("env_file"))  # type: ignore[arg-type]
     return Settings()
 
 

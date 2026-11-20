@@ -5,7 +5,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.config import reset_settings
+from app.config import Settings, reset_settings
 from app.db import get_session_factory
 from app.main import app
 from app.models import Base
@@ -16,6 +16,8 @@ from app.reference.queue import get_enqueue
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Every test runs in mock mode with no keys and no network."""
+    # Tests never read a developer's real .env (it may hold model names and API keys).
+    monkeypatch.setitem(Settings.model_config, "env_file", None)
     monkeypatch.setenv("APORIA_LLM_MOCK", "1")
     monkeypatch.setenv("APORIA_ENV", "dev")
     for var in ("APORIA_MODEL_FAST", "LANGFUSE_PUBLIC_KEY", "LANGFUSE_SECRET_KEY"):
