@@ -222,3 +222,69 @@ test("nudge: the bubble dismisses itself after 12 seconds", async ({ page }) => 
   await expect(bubble(page)).toBeVisible();
   await expect(bubble(page)).toHaveCount(0, { timeout: 15_000 });
 });
+
+// ---- consent and telemetry ----
+
+test("consent: the first-run card is shown and nothing is sent without opt-in", async ({
+  page,
+  api,
+}) => {
+  await page.goto(PROBLEM);
+  await waitForCode(page);
+  await page.getByRole("button", { name: "Ask Aporia for a hint" }).click();
+  await expect(page.getByTestId("consent-card")).toContainText("Share anonymous usage events");
+  await page.getByRole("button", { name: "No thanks" }).click();
+  await expect(page.getByTestId("consent-card")).toHaveCount(0);
+  await expect(page.getByTestId("hint-view")).toContainText("element?");
+  await page.getByRole("button", { name: "Not helpful" }).click();
+  await page.waitForTimeout(2_000);
+  expect(api.events).toHaveLength(0); // opted out: no event was queued or sent
+
+  await page.reload(); // the choice is remembered: the card does not return
+  await waitForCode(page);
+  await page.getByRole("button", { name: "Ask Aporia for a hint" }).click();
+  await page.waitForTimeout(500);
+  await expect(page.getByTestId("consent-card")).toHaveCount(0);
+});
+
+test("consent: after opt-in, events are batched to the API without code or problem text", async ({
+  page,
+  api,
+}) => {
+  test.setTimeout(75_000);
+  const CANARY = "CANARY_STUDENT_CODE_8841";
+  await page.goto(PROBLEM);
+  await waitForCode(page);
+  await page.evaluate((c) => (window as any).__setCode(`# ${c}\nclass Solution: pass`), CANARY);
+  await expect
+    .poll(() =>
+      page.evaluate((c) => (window as any).__bridge.some((m: any) => m.code?.includes(c)), CANARY),
+    )
+    .toBe(true);
+
+  await page.getByRole("button", { name: "Ask Aporia for a hint" }).click();
+  await page.getByRole("button", { name: "Allow" }).click();
+  await expect(page.getByTestId("hint-view")).toContainText("element?");
+  await page.getByRole("button", { name: "Need a bigger hint" }).click(); // a second event
+  await expect(page.getByTestId("level-badge")).toContainText("L2");
+  await page.getByRole("button", { name: "Helpful", exact: true }).click();
+
+  // flushed by the 30-second timer
+  await expect.poll(() => api.events.length, { timeout: 45_000 }).toBeGreaterThan(0);
+  const sent = api.events.flatMap((b) => b.events);
+  const types = sent.map((e) => e.type);
+  expect(types).toContain("hint_requested");
+  expect(types).toContain("hint_rated");
+  expect(String(api.events[0]?.device)).toMatch(/^[0-9a-f-]{36}$/);
+
+  const payload = JSON.stringify(api.events);
+  expect(payload).not.toContain(CANARY); // no code
+  expect(payload).not.toContain("Synthetic statement"); // no problem text
+  for (const e of sent) {
+    expect(
+      Object.keys(e).every((k) =>
+        ["type", "ts", "slug", "level", "reason", "rating", "was_stuck"].includes(k),
+      ),
+    ).toBe(true);
+  }
+});

@@ -38,6 +38,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Post Events
+         * @description Stores a batch of allowlisted telemetry events (the extension only sends after opt-in).
+         */
+        post: operations["post_events_v1_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/hint": {
         parameters: {
             query?: never;
@@ -72,6 +92,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/hints/{hint_id}/rating": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Rating */
+        post: operations["post_rating_v1_hints__hint_id__rating_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/internal/reference/{slug}": {
         parameters: {
             query?: never;
@@ -93,6 +130,43 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** EventBatch */
+        EventBatch: {
+            /** Events */
+            events: components["schemas"]["EventIn"][];
+        };
+        /**
+         * EventIn
+         * @description One telemetry event. Strict: unknown fields are rejected, so code or problem text can never
+         *     arrive through a stray field.
+         */
+        EventIn: {
+            /** Level */
+            level?: number | null;
+            /** Rating */
+            rating?: number | null;
+            /** Reason */
+            reason?: ("consecutive_failures" | "repeated_failure" | "inactivity" | "low_progress") | null;
+            /** Slug */
+            slug?: string | null;
+            /**
+             * Ts
+             * @description epoch milliseconds
+             */
+            ts: number;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "stuck_prompt_shown" | "stuck_prompt_accepted" | "stuck_prompt_dismissed" | "hint_requested" | "hint_rated" | "stuck_label";
+            /** Was Stuck */
+            was_stuck?: boolean | null;
+        };
+        /** EventsAccepted */
+        EventsAccepted: {
+            /** Accepted */
+            accepted: number;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -218,6 +292,41 @@ export interface operations {
             };
         };
     };
+    post_events_v1_events_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-aporia-device"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventBatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EventsAccepted"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     post_hint_v1_hint_post: {
         parameters: {
             query?: never;
@@ -255,6 +364,41 @@ export interface operations {
         };
     };
     post_rating_v1_hint__hint_id__rating_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "x-aporia-device"?: string | null;
+            };
+            path: {
+                hint_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RatingRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_rating_v1_hints__hint_id__rating_post: {
         parameters: {
             query?: never;
             header?: {

@@ -41,7 +41,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 3.4 Grounded hint generation
 - [x] 3.5 Stuck detector (extension)
 - [x] 3.6 Nudge UI
-- [ ] 3.7 Consent and events
+- [x] 3.7 Consent and events
 - [ ] 3.8 Error tracking
 - [ ] 3.9 Optional: PostHog forwarding
 - [ ] 3.10 Documentation

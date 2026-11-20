@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import JSON, BigInteger, Boolean, DateTime, ForeignKey, Integer, String, Text, Uuid
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -81,3 +81,18 @@ class Attempt(Base):
     verdict: Mapped[str] = mapped_column(String)
     failing_case: Mapped[Any | None] = mapped_column(JSONType, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Event(Base):
+    """First-party telemetry (opt-in). Never contains code or problem text."""
+
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
+    device_hash: Mapped[str] = mapped_column(String, index=True)
+    type: Mapped[str] = mapped_column(String, index=True)
+    slug: Mapped[str | None] = mapped_column(String, nullable=True)
+    props: Mapped[dict[str, Any]] = mapped_column(JSONType, default=dict)
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)

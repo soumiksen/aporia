@@ -22,6 +22,7 @@ export interface MockApi {
   url: string;
   requests: RecordedRequest[];
   ratings: RecordedRating[];
+  events: { device: string | string[] | undefined; events: Record<string, unknown>[] }[];
   close: () => Promise<void>;
 }
 
@@ -29,7 +30,17 @@ export interface MockApi {
 export async function startMockApi(port: number): Promise<MockApi> {
   const requests: RecordedRequest[] = [];
   const ratings: RecordedRating[] = [];
+  const events: MockApi["events"] = [];
   const server: Server = createServer((req, res) => {
+    if (req.method === "POST" && req.url === "/v1/events") {
+      let raw = "";
+      req.on("data", (c: Buffer) => (raw += c.toString()));
+      req.on("end", () => {
+        events.push({ device: req.headers["x-aporia-device"], events: JSON.parse(raw).events });
+        res.writeHead(202, { "content-type": "application/json" }).end('{"accepted":1}');
+      });
+      return;
+    }
     const rating = /^\/v1\/hints?\/([^/]+)\/rating$/.exec(req.url ?? "");
     if (req.method === "POST" && rating) {
       let raw = "";
@@ -83,6 +94,7 @@ export async function startMockApi(port: number): Promise<MockApi> {
     url: `http://127.0.0.1:${port}`,
     requests,
     ratings,
+    events,
     close: () => new Promise((resolve) => server.close(() => resolve())),
   };
 }

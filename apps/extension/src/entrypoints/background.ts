@@ -1,11 +1,34 @@
 import { API_URL } from "../lib/api-url";
+import { getConsent, setConsent } from "../lib/consent";
 import { getOrCreateDeviceId } from "../lib/device";
+import { postEvents } from "../lib/events/post";
+import { EventQueue } from "../lib/events/queue";
 import { onMessage, sendMessage } from "../lib/protocol";
 import { postRating } from "../lib/rating";
 import { streamHint } from "../lib/sse";
 
 export default defineBackground(() => {
   const inflight = new Map<string, AbortController>();
+
+  // Telemetry: queued only after explicit opt-in, batched, retried with backoff.
+  const queue = new EventQueue({
+    isEnabled: async () => (await getConsent(browser.storage.local)).enabled,
+    send: async (events) =>
+      postEvents({
+        apiUrl: API_URL,
+        deviceId: await getOrCreateDeviceId(browser.storage.local),
+        events,
+      }),
+    storage: browser.storage.local,
+  });
+  void queue.load(); // survive service-worker restarts (and flush what was waiting)
+  onMessage("trackEvent", async ({ data }) => void (await queue.enqueue(data)));
+  onMessage("getConsent", () => getConsent(browser.storage.local));
+  onMessage("setConsent", async ({ data }) => {
+    const consent = await setConsent(browser.storage.local, data.enabled);
+    if (!consent.enabled) await queue.clear(); // opting out drops anything still waiting
+    return consent;
+  });
 
   onMessage("getDeviceId", () => getOrCreateDeviceId(browser.storage.local));
 

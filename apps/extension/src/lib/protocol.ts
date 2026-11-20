@@ -1,4 +1,5 @@
 import { defineExtensionMessaging } from "@webext-core/messaging";
+import type { Consent } from "./consent";
 import type { AporiaEvent } from "./events/types";
 import type { HintEvent, HintRequest } from "./messages";
 
@@ -8,6 +9,10 @@ interface ProtocolMap {
   getHint(data: { requestId: string; request: HintRequest }): void;
   /** Content script -> service worker. Aborts an in-flight stream. */
   cancelHint(data: { requestId: string }): void;
+  /** Any context -> service worker. Current telemetry consent (default: undecided, off). */
+  getConsent(): Consent;
+  /** Any context -> service worker. Records the student's choice; turning it off clears the queue. */
+  setConsent(data: { enabled: boolean }): Consent;
   /** Content script -> service worker. Queues a telemetry event (dropped unless opted in). */
   trackEvent(data: AporiaEvent): void;
   /** Service worker -> content script (tab). The system idle state changed. */

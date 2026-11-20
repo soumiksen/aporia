@@ -17,18 +17,26 @@ class RedisLike(Protocol):
     async def expire(self, name: str, time: int) -> bool: ...
 
 
-def window_key(device_id: str, now: float, window: int = WINDOW_SECONDS) -> str:
-    """Fixed-window key: one counter per device per window."""
-    return f"rl:hint:{device_id}:{int(now // window)}"
+def window_key(
+    device_id: str, now: float, window: int = WINDOW_SECONDS, prefix: str = "hint"
+) -> str:
+    """Fixed-window key: one counter per device per window (and per limiter)."""
+    return f"rl:{prefix}:{device_id}:{int(now // window)}"
 
 
 def is_allowed(count: int, limit: int) -> bool:
     return count <= limit
 
 
-async def hit(redis: RedisLike, device_id: str, limit: int, now: float | None = None) -> bool:
+async def hit(
+    redis: RedisLike,
+    device_id: str,
+    limit: int,
+    now: float | None = None,
+    prefix: str = "hint",
+) -> bool:
     """Records a request and returns whether it is within the limit."""
-    key = window_key(device_id, time.time() if now is None else now)
+    key = window_key(device_id, time.time() if now is None else now, prefix=prefix)
     count = await redis.incr(key)
     if count == 1:
         await redis.expire(key, WINDOW_SECONDS * 2)
@@ -60,6 +68,26 @@ async def enforce_rate_limit(
         allowed = await hit(cast(RedisLike, redis), device_id, settings.rate_limit_per_minute)
     except Exception:
         # Fail open: a limiter outage must not block hints. /readyz reports Redis health.
+        logger.warning("rate limiter unavailable; allowing request")
+        return device_id
+    if not allowed:
+        raise HTTPException(
+            status_code=429, detail="Rate limit exceeded", headers={"Retry-After": "60"}
+        )
+    return device_id
+
+
+EVENTS_PER_MINUTE = 120
+
+
+async def enforce_events_rate_limit(
+    device_id: str = Depends(require_device),
+    redis: Redis = Depends(get_redis),
+) -> str:
+    """A separate counter from hint requests: telemetry never eats the hint budget."""
+    try:
+        allowed = await hit(cast(RedisLike, redis), device_id, EVENTS_PER_MINUTE, prefix="events")
+    except Exception:
         logger.warning("rate limiter unavailable; allowing request")
         return device_id
     if not allowed:

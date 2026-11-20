@@ -37,7 +37,8 @@ function emit2(event: HintEvent) {
 
 describe("App", () => {
   beforeEach(() => {
-    h.sendMessage.mockClear();
+    h.sendMessage.mockReset();
+    h.sendMessage.mockImplementation(async () => undefined as never);
     useHintStore.getState().reset();
     resetPageState(null);
   });
@@ -185,6 +186,50 @@ describe("App", () => {
       await userEvent.type(screen.getByLabelText(/stuck on/i), "stuck on line 3");
       await userEvent.click(screen.getByRole("button", { name: "Try again" }));
       expect(requests().at(-1)).toMatchObject({ student_message: "stuck on line 3" });
+    });
+  });
+
+  describe("consent card", () => {
+    const consentCalls = () => h.sendMessage.mock.calls.filter((c) => c[0] === "setConsent");
+
+    it("is shown on first run and Allow records opt-in", async () => {
+      h.sendMessage.mockImplementation(async (type: string) =>
+        type === "getConsent"
+          ? ({ decided: false, enabled: false } as never)
+          : (undefined as never),
+      );
+      resetPageState("two-sum");
+      render(<App />);
+      await userEvent.click(screen.getByRole("button", { name: /ask aporia/i }));
+      expect(await screen.findByTestId("consent-card")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "Allow" }));
+      expect(consentCalls()).toEqual([["setConsent", { enabled: true }]]);
+      expect(screen.queryByTestId("consent-card")).toBeNull();
+    });
+
+    it("No thanks records opt-out and the card does not come back", async () => {
+      h.sendMessage.mockImplementation(async (type: string) =>
+        type === "getConsent"
+          ? ({ decided: false, enabled: false } as never)
+          : (undefined as never),
+      );
+      resetPageState("two-sum");
+      render(<App />);
+      await userEvent.click(screen.getByRole("button", { name: /ask aporia/i }));
+      await userEvent.click(await screen.findByRole("button", { name: "No thanks" }));
+      expect(consentCalls()).toEqual([["setConsent", { enabled: false }]]);
+      expect(screen.queryByTestId("consent-card")).toBeNull();
+    });
+
+    it("is not shown once the student has decided", async () => {
+      h.sendMessage.mockImplementation(async (type: string) =>
+        type === "getConsent" ? ({ decided: true, enabled: false } as never) : (undefined as never),
+      );
+      resetPageState("two-sum");
+      render(<App />);
+      await userEvent.click(screen.getByRole("button", { name: /ask aporia/i }));
+      await new Promise((r) => setTimeout(r, 20));
+      expect(screen.queryByTestId("consent-card")).toBeNull();
     });
   });
 });

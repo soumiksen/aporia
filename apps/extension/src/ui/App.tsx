@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { ConsentCard } from "@/components/ConsentCard";
+import type { Consent } from "@/lib/consent";
+import { sendMessage } from "@/lib/protocol";
 import { ErrorView } from "@/components/ErrorView";
 import { HintActions } from "@/components/HintActions";
 import { HintView } from "@/components/HintView";
@@ -23,6 +26,18 @@ export function App() {
   const supported = useHintStore((s) => s.supported);
   const rated = useHintStore((s) => s.rated);
   const errorMessage = useHintStore((s) => s.errorMessage);
+
+  // Undefined/unknown consent never shows telemetry UI; only an explicit "undecided" does.
+  const [consent, setConsentState] = useState<Consent | null>(null);
+  useEffect(() => {
+    void sendMessage("getConsent")
+      .then((c) => setConsentState(c ?? null))
+      .catch(() => undefined);
+  }, []);
+  const chooseConsent = (enabled: boolean) => {
+    setConsentState({ decided: true, enabled });
+    void sendMessage("setConsent", { enabled }).catch(() => undefined);
+  };
 
   const nudge = useStuckNudge({
     slug,
@@ -69,6 +84,7 @@ export function App() {
         ) : null
       }
     >
+      {consent?.decided === false && <ConsentCard onChoose={chooseConsent} />}
       {!slug ? (
         <p className="text-sm text-muted-foreground">Open a problem to get started.</p>
       ) : (

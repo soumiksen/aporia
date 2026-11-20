@@ -1,6 +1,133 @@
 {
   "components": {
     "schemas": {
+      "EventBatch": {
+        "additionalProperties": false,
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/EventIn"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          }
+        },
+        "required": [
+          "events"
+        ],
+        "title": "EventBatch",
+        "type": "object"
+      },
+      "EventIn": {
+        "additionalProperties": false,
+        "description": "One telemetry event. Strict: unknown fields are rejected, so code or problem text can never\narrive through a stray field.",
+        "properties": {
+          "level": {
+            "anyOf": [
+              {
+                "maximum": 4.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Level"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "maximum": 5.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "enum": [
+                  "consecutive_failures",
+                  "repeated_failure",
+                  "inactivity",
+                  "low_progress"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "pattern": "^[a-z0-9][a-z0-9-]{0,99}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "ts": {
+            "description": "epoch milliseconds",
+            "title": "Ts",
+            "type": "integer"
+          },
+          "type": {
+            "enum": [
+              "stuck_prompt_shown",
+              "stuck_prompt_accepted",
+              "stuck_prompt_dismissed",
+              "hint_requested",
+              "hint_rated",
+              "stuck_label"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "was_stuck": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Was Stuck"
+          }
+        },
+        "required": [
+          "type",
+          "ts"
+        ],
+        "title": "EventIn",
+        "type": "object"
+      },
+      "EventsAccepted": {
+        "properties": {
+          "accepted": {
+            "title": "Accepted",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "accepted"
+        ],
+        "title": "EventsAccepted",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -255,6 +382,63 @@
         "summary": "Readyz"
       }
     },
+    "/v1/events": {
+      "post": {
+        "description": "Stores a batch of allowlisted telemetry events (the extension only sends after opt-in).",
+        "operationId": "post_events_v1_events_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-aporia-device",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Device"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventsAccepted"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Events"
+      }
+    },
     "/v1/hint": {
       "post": {
         "operationId": "post_hint_v1_hint_post",
@@ -328,6 +512,65 @@
     "/v1/hint/{hint_id}/rating": {
       "post": {
         "operationId": "post_rating_v1_hint__hint_id__rating_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "hint_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Hint Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-aporia-device",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Device"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RatingRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Rating"
+      }
+    },
+    "/v1/hints/{hint_id}/rating": {
+      "post": {
+        "operationId": "post_rating_v1_hints__hint_id__rating_post",
         "parameters": [
           {
             "in": "path",
