@@ -87,3 +87,29 @@ To build references you must also run the worker: `cd apps/api && uv run arq app
 Follow `evals/README.md`, then **share the printed summary table** (guard-off vs guard-on leak
 rate per category). Run `pnpm eval:gate` to check against `evals/redteam/baseline.json`.
 
+---
+
+# Stage 3 manual checks (nudge, consent, grounding)
+
+Rebuild and reload the dev extension (`VITE_API_URL=... pnpm --filter extension build:dev`). The
+manifest now also requests the `idle` permission, so Chrome may ask you to re-approve it.
+
+| # | Step | Expected | Pass/Fail | Notes |
+|---|------|----------|-----------|-------|
+| 24 | Open any problem and fail a submission 3 times in a row (use a problem where wrong submissions are fine). | The rabbit turns attentive (wide eyes, a small bounce) and a bubble says "Stuck? Want a nudge?" with Yes / Not now / Never on this problem. No hint opens by itself. | | |
+| 25 | Click **Yes**. | The panel opens and streams a level-1 hint. | | |
+| 26 | Trigger the nudge again within 10 minutes (fail 3 more times). | No bubble during the 10-minute cooldown. | | |
+| 27 | After a bubble appears, do nothing for 12 seconds. | It disappears by itself and counts as "Not now" (30-minute snooze). | | |
+| 28 | Click **Not now**, reload the page, fail 3 more times. | No bubble for 30 minutes (the snooze is remembered). | | |
+| 29 | Click **Never on this problem**, reload, fail 3 times. | No bubble on that problem, ever. Another problem can still nudge you (after the cooldown). | | |
+| 30 | Open a problem, stop typing and running for 4 minutes with the tab visible. | The bubble appears (inactivity). Switching to another tab and back restarts the 4-minute clock. | | |
+| 31 | Leave the computer idle (no keyboard or mouse) for several minutes, with the tab visible. | No bubble while the system is idle. | | |
+| 32 | Turn on "reduce motion" in macOS Accessibility settings and trigger a nudge. | The bubble appears but the mascot does not bounce. | | |
+| 33 | After dismissing a few nudges, watch for "Were you actually stuck?". | Appears now and then (about 30% of dismissals), at most once per page load. | | |
+| 34 | Open the panel for the first time. | A card asks "Share anonymous usage events to improve Aporia?". Telemetry stays off until you press **Allow**. The same switch is under the extension's options page. | | |
+| 35 | With telemetry off, use the extension for a few minutes and check the API log or `select count(*) from events`. | No events arrive. | | |
+| 36 | Press **Allow**, request a hint, rate it with 👍/👎, wait a minute. | `select type, slug, props from events order by id desc limit 10` shows `hint_requested`, `hint_rated`, etc. No code or problem text anywhere in those rows. | | |
+| 37 | With a **real model and Judge0** (Linux host, see Stage 2 notes), submit a wrong solution and ask for a level-2 hint. | The hint refers to a specific small input and what your code returns for it, asks you to trace it, and never states the correct output or the fix. `select grounded, failure_kind from hints order by created_at desc limit 1` shows `t | wrong_answer`. | | |
+
+Record any failures in `docs/BLOCKERS.md`.
+

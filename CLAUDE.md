@@ -21,12 +21,17 @@ Stage plans: `docs/stages/stage0.md` to `stage6.md`. Work on one stage at a time
 - Prompts are files in `apps/api/app/prompts/` with a version suffix; never inline long prompts in code.
 - Pure logic (ladder, stuck rules, shrinker, BKT, fusion) must have unit tests.
 - Untrusted code runs only through a `SandboxRunner` (Judge0), never in the API process.
-- Every reply passes the leak guard before it is shown; guard/sandbox errors return a safe hint.
+- Every reply passes the leak guard before it is shown; a guard error returns a safe hint, and a
+  sandbox (grounding) error continues prompt-only, still guarded.
 - Conventional commits; one task per commit.
 
 ## Product invariants (never violate)
 1. Aporia never outputs solution code or the exact fix, at any hint level.
-2. Student code is never logged at INFO level or stored in analytics events.
+2. Student code is never logged at INFO level or stored in analytics events. Telemetry is opt-in,
+   allowlisted (no code, no problem text), and error reports are scrubbed. `attempts` stores a
+   hash of the code, never the code.
 3. The extension only reads the user's own page and never auto-submits.
 4. No real LeetCode HTML, problem statements, or editorials are committed. Fixtures are synthetic.
-5. Failing safe: if the leak guard or sandbox errors, return a deterministic safe hint, not a raw model reply.
+5. Failing safe: if the leak guard errors, return a deterministic safe hint, not a raw model reply.
+   If grounding (the sandbox) errors, continue prompt-only: the reply is still generated and guarded.
+6. The expected output and the reference code never reach the hint generator, only the guard.

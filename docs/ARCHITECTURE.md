@@ -19,8 +19,11 @@ aporia/
 - **MAIN-world bridge**: runs in the page's JS world; reads the Monaco model and observes
   fetch/XHR verdicts; talks to the content script via `window.postMessage`.
 - **Content script + Shadow DOM UI**: React panel (mascot) isolated from LeetCode CSS.
-- **Service worker**: stuck detector (rules, Chrome idle/alarms), API client, token handling,
-  event batching.
+- **Service worker**: API client, device id, system-idle relay (`chrome.idle`, 60 s), consent and
+  the telemetry queue (flush every 30 s or 20 events, retry with backoff). The stuck detector
+  itself runs in the content script as pure rules (`src/lib/stuck/`) fed by bridge messages,
+  page visibility and the idle state; cooldown/snooze/per-problem opt-out live in
+  `chrome.storage.local`.
 - **IndexedDB (Dexie)**: local-first learner data: mistakes, settings, cached hints.
 
 ## Backend (Python 3.12, FastAPI)
@@ -31,8 +34,12 @@ aporia/
 - **Execution**: Arq worker on Redis; differential tests and a failing-input shrinker against
   Judge0 through a `SandboxRunner` interface.
 - **LLM gateway**: LiteLLM routing/fallback/caching; structured output via Instructor.
-- **Leak guard**: classifier first, LLM judge for uncertain drafts, rewrite once, else a
-  deterministic safe hint.
+- **Leak guard**: deterministic heuristics (code blocks, AST similarity to the reference, correctness
+  claims, expected-output reveal), then an LLM judge, rewrite once, else a deterministic safe hint.
+- **Grounding** (`app/grounding/`): failing-case finder, shrinker, context builder; see
+  `docs/GROUNDING.md`. 12 s budget, falls back to prompt-only hints.
+- **Events** (`POST /v1/events`): opt-in, strict allowlist, stored in `events`; optional PostHog
+  forwarding (Arq cron) and Sentry error tracking, both off unless configured.
 
 ## Data
 - **Postgres 16 + pgvector**: problems, concepts, attempts, hints, mistakes, mastery, events.

@@ -44,7 +44,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 3.7 Consent and events
 - [x] 3.8 Error tracking
 - [x] 3.9 Optional: PostHog forwarding
-- [ ] 3.10 Documentation
+- [x] 3.10 Documentation
 
 ## Stage 4: Learner model, semantic search, and RAG
 - [ ] (task IDs to be added from stage4.md)
