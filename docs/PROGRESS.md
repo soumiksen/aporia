@@ -125,6 +125,13 @@ availability and language ids, and the description fallback selector.
   rates and its result file was deleted.
 
 ### Not verified / needs the user
+- **First real-model attempt (2026-11-19/20), Gemini free tier:** the key works and a real hint plus
+  guard-judge round trip succeeded, but the Google free tier allows only **20 requests per day per
+  model** ("generate_content_free_tier_requests, limit: 20"), so the red-team run (about 400+ calls)
+  was rate-limited and produced no usable numbers (partial results deleted). It needs a paid tier
+  (billing enabled on the Google project) or a provider with higher limits. `.env` has
+  `APORIA_LLM_MOCK=0`; for everyday UI testing start the API with `APORIA_LLM_MOCK=1` to avoid
+  burning quota. LiteLLM retries (`llm_num_retries`, default 4) cannot help with a daily quota.
 - **First real leak rates: not yet measured.** Run `pnpm eval:redteam` with real keys (see
   `evals/README.md`) and share the summary table. Placeholders to fill in once available:
   guard-off leak rate: ____ ; guard-on leak rate: ____ (target 0.0; `baseline.json` is 0.0).
