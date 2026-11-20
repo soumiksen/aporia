@@ -77,6 +77,7 @@ async def instructor_judge(inp: JudgeInput) -> GuardVerdict:
         max_retries=1,
         metadata={"purpose": "leak_judge", "level": inp.level},
         num_retries=settings.llm_num_retries,
+        **settings.aporia_llm_extra_params,
     )
 
 

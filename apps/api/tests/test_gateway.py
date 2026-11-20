@@ -15,6 +15,7 @@ def chunk(text: str | None) -> SimpleNamespace:
 async def test_real_mode_uses_env_model_and_streams(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("APORIA_LLM_MOCK", "0")
     monkeypatch.setenv("APORIA_MODEL_FAST", "provider/test-model")
+    monkeypatch.setenv("APORIA_LLM_EXTRA_PARAMS", '{"think": false}')
     reset_settings()
     seen: dict[str, Any] = {}
 
@@ -32,6 +33,7 @@ async def test_real_mode_uses_env_model_and_streams(monkeypatch: pytest.MonkeyPa
     assert out == ["a", "b"]
     assert seen["model"] == "provider/test-model" and seen["stream"] is True
     assert seen["num_retries"] == 4  # provider rate limits are retried with backoff
+    assert seen["think"] is False  # APORIA_LLM_EXTRA_PARAMS is forwarded to the provider call
 
 
 async def test_unset_model_raises_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:

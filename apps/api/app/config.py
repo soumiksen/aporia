@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from dotenv import dotenv_values
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -28,6 +29,9 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 30
     # LiteLLM retries (with backoff, honouring provider retry hints) for rate limits and 5xx.
     llm_num_retries: int = 4
+    # Extra provider parameters passed to every LiteLLM call, as JSON, e.g. {"think": false} to
+    # switch off reasoning on local Ollama models. Never put secrets here.
+    aporia_llm_extra_params: dict[str, Any] = {}
     aporia_internal_token: str = ""
 
 

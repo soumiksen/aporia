@@ -73,6 +73,7 @@ async def stream_completion(
         stream=True,
         metadata=metadata or {},
         num_retries=get_settings().llm_num_retries,
+        **get_settings().aporia_llm_extra_params,
     )
     async for chunk in response:  # pyright: ignore[reportGeneralTypeIssues]
         delta = chunk.choices[0].delta.content
@@ -104,6 +105,7 @@ async def complete(
         messages=messages,
         metadata=metadata or {},
         num_retries=get_settings().llm_num_retries,
+        **get_settings().aporia_llm_extra_params,
     )
     content = response.choices[0].message.content  # pyright: ignore[reportAttributeAccessIssue]
     return content or ""
