@@ -28,7 +28,7 @@ export default defineConfig({
   }),
   manifest: ({ mode }) => ({
     name: "Aporia",
-    permissions: ["storage"],
+    permissions: ["storage", "idle"],
     // The local API is only reachable from development builds.
     host_permissions: [
       "https://leetcode.com/*",

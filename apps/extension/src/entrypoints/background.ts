@@ -18,6 +18,22 @@ export default defineBackground(() => {
     }),
   );
 
+  // System idle: 60 s detection interval; state changes are relayed to open LeetCode tabs.
+  const IDLE_INTERVAL_S = 60;
+  browser.idle.setDetectionInterval(IDLE_INTERVAL_S);
+  browser.idle.onStateChanged.addListener(async (state) => {
+    const tabs = await browser.tabs.query({ url: "https://leetcode.com/*" });
+    for (const tab of tabs) {
+      if (tab.id !== undefined) {
+        sendMessage("idleState", { idle: state !== "active" }, tab.id).catch(() => undefined);
+      }
+    }
+  });
+  onMessage(
+    "getIdleState",
+    async () => (await browser.idle.queryState(IDLE_INTERVAL_S)) !== "active",
+  );
+
   onMessage("cancelHint", ({ data }) => {
     inflight.get(data.requestId)?.abort();
     inflight.delete(data.requestId);
