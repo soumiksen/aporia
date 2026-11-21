@@ -36,6 +36,7 @@ class RetrievalContext:
     notes: list[Hit] = field(default_factory=list)
     mistakes: list[MistakeHit] = field(default_factory=list)
     analogous: list[Hit] = field(default_factory=list)
+    memory_used: bool = False  # this student's learner data shaped the prompt
 
     @property
     def sources(self) -> list[Source]:
@@ -126,6 +127,7 @@ class DbRetriever:
             if use_memory:
                 try:
                     weak = overlapping(await weak_concepts(session, device), concepts)
+                    ctx.memory_used = bool(weak)
                 except Exception as exc:  # noqa: BLE001
                     logger.warning("weak concepts failed: %s", type(exc).__name__)
             query = build_query(concepts, failure_text, weak)
@@ -150,6 +152,7 @@ class DbRetriever:
                     ctx.mistakes = await similar_mistakes(
                         session, self.embedder, device, failure_text or query, slug, MAX_MISTAKES
                     )
+                    ctx.memory_used = ctx.memory_used or bool(ctx.mistakes)
                 except Exception as exc:  # noqa: BLE001
                     await session.rollback()
                     logger.warning("mistake recall failed: %s", type(exc).__name__)

@@ -164,7 +164,7 @@ async def test_endpoint_records_the_guard_path(client, db_session_factory, monke
         events = await ask(client, level=1)
         assert done(events)["level"] == 1 and judge.calls == 0  # the classifier passed it
         monkeypatch.setattr("app.api.hint.get_classifier", lambda: None)  # missing artifacts
-        await ask(client, level=1)
+        await ask(client, level=1, code="def pairCount(a, t):\n    return 1")
         assert judge.calls == 1  # fell back to the prompted guard
     finally:
         app.dependency_overrides.pop(get_generator, None)

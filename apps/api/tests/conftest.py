@@ -9,6 +9,9 @@ from app.api.hint import get_retriever
 from app.config import Settings, reset_settings
 from app.db import get_session_factory
 from app.guard.classifier import reset_classifier
+from app.llm import calls as llm_calls
+from app.llm.budget import reset_budget_cache
+from app.llm.router import reset_router
 from app.main import app
 from app.models import Base
 from app.ratelimit import get_redis
@@ -18,6 +21,10 @@ from app.sandbox.fake import FakeRunner
 from app.sandbox.provider import get_runner
 
 
+async def _discard(rec: llm_calls.CallRecord) -> None:
+    return None
+
+
 @pytest.fixture(autouse=True)
 def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Every test runs in mock mode with no keys and no network."""
@@ -25,6 +32,8 @@ def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setitem(Settings.model_config, "env_file", None)
     monkeypatch.setenv("APORIA_LLM_MOCK", "1")
     monkeypatch.setenv("APORIA_ENV", "dev")
+    monkeypatch.setenv("HINT_CACHE_TTL_S", "0")  # tests that exercise the cache turn it on
+    monkeypatch.setenv("APORIA_DAILY_BUDGET_USD", "0")
     # Importing litellm runs python-dotenv, which can pull a developer's real .env (model names,
     # provider keys) into os.environ. Clear everything that could reach a real provider.
     for var in (
@@ -41,9 +50,15 @@ def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv(var, raising=False)
     reset_settings()
     reset_classifier()
+    reset_router()
+    reset_budget_cache()
+    llm_calls.set_writer(_discard)  # tests never write llm_calls rows to a real database
     yield
     reset_settings()
     reset_classifier()
+    reset_router()
+    reset_budget_cache()
+    llm_calls.set_writer(None)
 
 
 @pytest.fixture
@@ -99,3 +114,15 @@ async def client(redis, db_session_factory, enqueue_calls, summary_calls):
     app.dependency_overrides.pop(get_enqueue_summary, None)
     app.dependency_overrides.pop(get_retriever, None)
     app.dependency_overrides.pop(get_runner, None)
+
+
+@pytest.fixture
+def llm_records() -> list[llm_calls.CallRecord]:
+    """Captures every recorded model call for the test."""
+    records: list[llm_calls.CallRecord] = []
+
+    async def collect(rec: llm_calls.CallRecord) -> None:
+        records.append(rec)
+
+    llm_calls.set_writer(collect)
+    return records

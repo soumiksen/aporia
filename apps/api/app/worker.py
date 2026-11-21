@@ -19,7 +19,7 @@ logger = logging.getLogger("aporia.worker")
 
 
 async def strong_llm(messages: list[dict[str, str]]) -> str:
-    return await complete(messages, "APORIA_MODEL_STRONG")
+    return await complete(messages, "APORIA_MODEL_STRONG", purpose="reference")
 
 
 async def build_reference_job(ctx: dict[str, Any], slug: str, problem: dict[str, Any]) -> str:

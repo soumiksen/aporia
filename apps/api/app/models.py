@@ -170,3 +170,21 @@ class ConceptMastery(Base):
     p_known: Mapped[float] = mapped_column(Float)
     n_obs: Mapped[int] = mapped_column(Integer, default=0)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class LLMCall(Base):
+    """One model call: what it was for, tokens, cost and latency. Never the prompt or the reply."""
+
+    __tablename__ = "llm_calls"
+
+    id: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), primary_key=True, autoincrement=True
+    )
+    ts: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
+    purpose: Mapped[str] = mapped_column(String, index=True)
+    model: Mapped[str] = mapped_column(String)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    latency_ms: Mapped[int] = mapped_column(Integer, default=0)
+    hint_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True)

@@ -70,21 +70,25 @@ async def instructor_judge(inp: JudgeInput) -> GuardVerdict:
 
     model = resolve_model("APORIA_MODEL_JUDGE")
     import instructor
-    import litellm
 
+    from app.llm.calls import tracked
+    from app.llm.router import get_router
     from app.llm.tracing import configure_tracing
 
     configure_tracing()
-    client = instructor.from_litellm(litellm.acompletion)
-    return await client.chat.completions.create(  # pyright: ignore[reportCallIssue]
-        model=model,
-        messages=build_judge_messages(inp),  # pyright: ignore[reportArgumentType]
-        response_model=GuardVerdict,
-        max_retries=1,
-        metadata={"purpose": "leak_judge", "level": inp.level},
-        num_retries=settings.llm_num_retries,
-        **settings.aporia_llm_extra_params,
-    )
+    client = instructor.from_litellm(get_router().acompletion)
+
+    async def call() -> Any:
+        return await client.chat.completions.create_with_completion(  # pyright: ignore[reportCallIssue,reportGeneralTypeIssues]
+            model="judge",
+            messages=build_judge_messages(inp),  # pyright: ignore[reportArgumentType]
+            response_model=GuardVerdict,
+            max_retries=1,
+            metadata={"purpose": "leak_judge", "level": inp.level},
+        )
+
+    parsed, _ = await tracked("guard_judge", model, call, response_of=lambda pair: pair[1])
+    return parsed
 
 
 def get_judge() -> Judge:

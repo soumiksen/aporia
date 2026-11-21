@@ -112,21 +112,25 @@ async def instructor_summary(messages: list[dict[str, str]]) -> RawSummary:
         return RawSummary(summary="Mock summary of the reasoning involved.", concepts=[])
     model = resolve_model("APORIA_MODEL_FAST")
     import instructor
-    import litellm
 
+    from app.llm.calls import tracked
+    from app.llm.router import get_router
     from app.llm.tracing import configure_tracing
 
     configure_tracing()
-    client = instructor.from_litellm(litellm.acompletion)
-    return await client.chat.completions.create(  # pyright: ignore[reportCallIssue]
-        model=model,
-        messages=messages,  # pyright: ignore[reportArgumentType]
-        response_model=RawSummary,
-        max_retries=0,
-        metadata={"purpose": "problem_summary"},
-        num_retries=settings.llm_num_retries,
-        **settings.aporia_llm_extra_params,
-    )
+    client = instructor.from_litellm(get_router().acompletion)
+
+    async def call() -> Any:
+        return await client.chat.completions.create_with_completion(  # pyright: ignore[reportCallIssue,reportGeneralTypeIssues]
+            model="fast",
+            messages=messages,  # pyright: ignore[reportArgumentType]
+            response_model=RawSummary,
+            max_retries=0,
+            metadata={"purpose": "problem_summary"},
+        )
+
+    parsed, _ = await tracked("problem_summary", model, call, response_of=lambda pair: pair[1])
+    return parsed
 
 
 def embed_text(result: SummaryResult, taxonomy: Taxonomy) -> str:

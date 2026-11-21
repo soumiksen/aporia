@@ -3,6 +3,8 @@ from collections.abc import AsyncIterator
 from typing import Any, Literal
 
 from app.config import get_settings
+from app.llm.calls import tracked
+from app.llm.router import get_router, group_for_model_env
 
 ModelEnv = Literal["APORIA_MODEL_FAST", "APORIA_MODEL_STRONG", "APORIA_MODEL_JUDGE"]
 
@@ -60,20 +62,17 @@ async def stream_completion(
             yield token
         return
 
-    model = resolve_model(model_env)
-    # Imported lazily: litellm is slow to import and unused in mock mode.
-    import litellm
-
+    resolve_model(model_env)  # raises a clear error when the group has no model
     from app.llm.tracing import configure_tracing
 
     configure_tracing()
-    response = await litellm.acompletion(
-        model=model,
+    # Streaming goes through the Router too (fallbacks, timeouts). Token usage is not reported on a
+    # stream, so streamed calls are not written to llm_calls.
+    response = await get_router().acompletion(
+        model=group_for_model_env(model_env),
         messages=messages,
         stream=True,
         metadata=metadata or {},
-        num_retries=get_settings().llm_num_retries,
-        **get_settings().aporia_llm_extra_params,
     )
     async for chunk in response:  # pyright: ignore[reportGeneralTypeIssues]
         delta = chunk.choices[0].delta.content
@@ -89,23 +88,25 @@ async def complete(
     model_env: ModelEnv = "APORIA_MODEL_FAST",
     *,
     metadata: dict[str, Any] | None = None,
+    purpose: str = "hint",
 ) -> str:
-    """Non-streaming completion (the guard needs the whole draft before anything is shown)."""
+    """Non-streaming completion (the guard needs the whole draft before anything is shown).
+    Routed through the Router (fallbacks, timeouts, retries) and recorded in `llm_calls`."""
     if get_settings().aporia_llm_mock:
         return MOCK_REPLY
 
     model = resolve_model(model_env)
-    import litellm
 
     from app.llm.tracing import configure_tracing
 
     configure_tracing()
-    response = await litellm.acompletion(
-        model=model,
-        messages=messages,
-        metadata=metadata or {},
-        num_retries=get_settings().llm_num_retries,
-        **get_settings().aporia_llm_extra_params,
+    router = get_router()
+    response = await tracked(
+        purpose,
+        model,
+        lambda: router.acompletion(
+            model=group_for_model_env(model_env), messages=messages, metadata=metadata or {}
+        ),
     )
     content = response.choices[0].message.content  # pyright: ignore[reportAttributeAccessIssue]
     return content or ""

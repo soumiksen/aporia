@@ -42,6 +42,14 @@ class Settings(BaseSettings):
     # Stage 5: the leak classifier and the guard mode.
     aporia_classifier_dir: str = ""  # directory with model.onnx, tokenizer.json, model_card.json
     aporia_guard_mode: str = ""  # prompted | classifier_only | cascade ("" = cascade if a model)
+    # Stage 5: routing, caching and cost control.
+    aporia_fallbacks_fast: str = ""  # comma-separated fallback model strings per group
+    aporia_fallbacks_strong: str = ""
+    aporia_fallbacks_judge: str = ""
+    llm_timeout_s: float = 60.0
+    hint_cache_ttl_s: int = 3600
+    aporia_daily_budget_usd: float = 0.0  # 0 = no budget; above it hints fall back to safe hints
+    otel_exporter_otlp_endpoint: str = ""  # OpenTelemetry is on only when this is set
     aporia_internal_token: str = ""
     posthog_api_key: str = ""  # forwarding to PostHog is off unless this is set
     posthog_host: str = "https://us.i.posthog.com"
