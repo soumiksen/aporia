@@ -27,7 +27,7 @@ from app.hints.service import (
 from app.hints.state_store import load_state, save_state
 from app.llm.gateway import LLMConfigError, complete, ensure_configured
 from app.ratelimit import enforce_rate_limit, get_redis, require_device
-from app.reference.queue import Enqueue, get_enqueue
+from app.reference.queue import Enqueue, get_enqueue, get_enqueue_summary
 from app.sandbox.base import SandboxRunner
 from app.sandbox.provider import get_runner
 from app.schemas.hint import DoneEvent, ErrorEvent, HintRequest, RatingRequest, TokenEvent
@@ -68,6 +68,7 @@ async def post_hint(
     factory: SessionFactory = Depends(get_session_factory),
     redis_client: redis.asyncio.Redis = Depends(get_redis),
     enqueue: Enqueue = Depends(get_enqueue),
+    enqueue_summary: Enqueue = Depends(get_enqueue_summary),
     generator: Generator = Depends(get_generator),
     judge: Judge = Depends(get_judge),
     runner: SandboxRunner = Depends(get_runner),
@@ -87,7 +88,7 @@ async def post_hint(
     hint_id = str(uuid.uuid4())
     device = device_hash(device_id)
     slug = body.problem.slug
-    info = await lookup_problem(factory, enqueue, body)
+    info = await lookup_problem(factory, enqueue, body, enqueue_summary)
 
     state = with_attempts(
         await load_state(redis_client, device, slug), body.failed_attempts, body.last_verdict

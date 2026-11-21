@@ -10,7 +10,7 @@ from app.db import get_session_factory
 from app.main import app
 from app.models import Base
 from app.ratelimit import get_redis
-from app.reference.queue import get_enqueue
+from app.reference.queue import get_enqueue, get_enqueue_summary
 from app.sandbox.base import SandboxError
 from app.sandbox.fake import FakeRunner
 from app.sandbox.provider import get_runner
@@ -66,13 +66,24 @@ def enqueue_calls() -> list[tuple[str, dict[str, Any]]]:
 
 
 @pytest.fixture
-async def client(redis, db_session_factory, enqueue_calls):
+def summary_calls() -> list[tuple[str, dict[str, Any]]]:
+    return []
+
+
+@pytest.fixture
+async def client(redis, db_session_factory, enqueue_calls, summary_calls):
     async def fake_enqueue(slug: str, problem: dict[str, Any]) -> bool:
         enqueue_calls.append((slug, problem))
         return True
 
     app.dependency_overrides[get_session_factory] = lambda: db_session_factory
+
+    async def fake_enqueue_summary(slug: str, problem: dict[str, Any]) -> bool:
+        summary_calls.append((slug, problem))
+        return True
+
     app.dependency_overrides[get_enqueue] = lambda: fake_enqueue
+    app.dependency_overrides[get_enqueue_summary] = lambda: fake_enqueue_summary
     # By default there is no sandbox in tests: grounding degrades to prompt-only.
     no_sandbox = FakeRunner([SandboxError("no sandbox in tests")])
     app.dependency_overrides[get_runner] = lambda: no_sandbox
@@ -80,4 +91,5 @@ async def client(redis, db_session_factory, enqueue_calls):
         yield c
     app.dependency_overrides.pop(get_session_factory, None)
     app.dependency_overrides.pop(get_enqueue, None)
+    app.dependency_overrides.pop(get_enqueue_summary, None)
     app.dependency_overrides.pop(get_runner, None)

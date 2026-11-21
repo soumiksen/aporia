@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.config import get_settings
 from app.grounding.finder import ReferenceData
 from app.llm.prompts import load_prompt, render
-from app.models import Attempt, Hint, TestCase
+from app.models import Attempt, Hint, ProblemSummary, TestCase
 from app.reference.queue import Enqueue
 from app.reference.store import latest_reference, upsert_problem
 from app.reference.supported import is_supported
@@ -65,7 +65,10 @@ class ProblemInfo:
 
 
 async def lookup_problem(
-    factory: SessionFactory, enqueue: Enqueue, req: HintRequest
+    factory: SessionFactory,
+    enqueue: Enqueue,
+    req: HintRequest,
+    enqueue_summary: Enqueue | None = None,
 ) -> ProblemInfo:
     """Records the problem, finds its verified reference, and enqueues a build if none exists.
 
@@ -78,6 +81,7 @@ async def lookup_problem(
             reference = await latest_reference(session, row.slug)
             await session.commit()
             supported = row.supported
+            has_summary = await session.get(ProblemSummary, row.slug) is not None
             verified = reference if reference and reference.status == "verified" else None
             loaded = None
             if verified:
@@ -95,6 +99,8 @@ async def lookup_problem(
                 )
         if reference is None and supported:
             await enqueue(req.problem.slug, payload)
+        if enqueue_summary is not None and not has_summary:
+            await enqueue_summary(req.problem.slug, payload)  # first time this problem is seen
         return ProblemInfo(supported, loaded)
     except Exception as exc:  # noqa: BLE001
         logger.warning("problem lookup failed (%s); using prompt-only hints", type(exc).__name__)

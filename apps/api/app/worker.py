@@ -7,6 +7,9 @@ from arq.connections import RedisSettings
 from app.config import get_settings
 from app.db import SessionLocal
 from app.llm.gateway import complete
+from app.rag.embedder import get_embedder
+from app.rag.summarize import SummaryLLM, instructor_summary, summarize_and_store
+from app.rag.taxonomy import load_taxonomy
 from app.reference.pipeline import LLM, build_reference
 from app.reference.store import save_result, upsert_problem
 from app.sandbox.judge0 import Judge0Runner
@@ -40,6 +43,27 @@ async def build_reference_job(ctx: dict[str, Any], slug: str, problem: dict[str,
         return result.status
 
 
+async def summarize_problem_job(ctx: dict[str, Any], slug: str, problem: dict[str, Any]) -> str:
+    """Writes the concept summary, tags and embedding for a problem seen for the first time."""
+    from redis.asyncio import Redis
+
+    settings = get_settings()
+    redis = Redis.from_url(settings.redis_url)
+    try:
+        embedder = ctx.get("embedder") or get_embedder(redis)
+        if embedder is None:
+            return "skipped: no embedding model configured"
+        llm: SummaryLLM = ctx.get("summary_llm", instructor_summary)
+        taxonomy = ctx.get("taxonomy") or load_taxonomy()
+        factory = ctx.get("session_factory", SessionLocal)
+        result = await summarize_and_store(
+            factory, {**problem, "slug": slug}, taxonomy, llm, embedder
+        )
+        return "needs_review" if result.needs_review else "ok"
+    finally:
+        await redis.aclose()
+
+
 async def forward_events_job(ctx: dict[str, Any]) -> int:
     """Forwards stored usage events to PostHog. Does nothing unless POSTHOG_API_KEY is set."""
     import httpx
@@ -63,7 +87,7 @@ async def on_startup(ctx: dict[str, Any]) -> None:
 
 
 class WorkerSettings:
-    functions = [build_reference_job]
+    functions = [build_reference_job, summarize_problem_job]
     # Every minute, only registered when a PostHog key is configured.
     cron_jobs = [cron(forward_events_job)] if get_settings().posthog_api_key else []
     on_startup = on_startup
