@@ -47,7 +47,15 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 3.10 Documentation
 
 ## Stage 4: Learner model, semantic search, and RAG
-- [ ] (task IDs to be added from stage4.md)
+- [x] 4.1 Schema
+- [ ] 4.2 Concept taxonomy
+- [ ] 4.3 Concept notes (original content)
+- [ ] 4.4 Embeddings and ingestion
+- [ ] 4.5 Problem summaries and tagging
+- [ ] 4.6 Hybrid retrieval
+- [ ] 4.7 Learner model
+- [ ] 4.8 Use retrieval and learner data in hints
+- [ ] 4.9 Retrieval evaluation
 
 ## Stage 5: Fine-tuning, performance, observability
 - [ ] (task IDs to be added from stage5.md)
