@@ -301,3 +301,57 @@ measurably change quality here. `docs/results/hint_quality.md`. All 30 RAG repli
 
 ### Notes the user flagged as inaccurate
 None yet (the notes have not been reviewed).
+
+## Stage 5 hand-off notes
+
+### What was built
+- `ml/`: synthetic problem generator, reference builder, leak-dataset builder and validator,
+  metrics (recall at FPR <= 5%, ROC-AUC, PR-AUC), threshold selection and `model_card.json`,
+  DeBERTa training (`train_classifier.py`, `--smoke`), the Modal job, ONNX export with int8
+  quantization and parity checks.
+- API: `LeakClassifier` (ONNX Runtime, lazy, falls back to the prompted guard), the shared input
+  formatter, the cascade guard (`prompted` / `classifier_only` / `cascade`, path recorded), LiteLLM
+  Router (fast / strong / judge, fallbacks), hint cache, `llm_calls` table (migration 0006) with a
+  single recording wrapper, daily budget guard, OpenTelemetry (off unless an endpoint is set) with
+  the five custom metrics, Grafana LGTM compose profile and dashboard.
+- Evals and CI: `evals/guard_compare/` (+ `docs/results/guard.md` as a TODO), `docs/RESULTS.md`, CI
+  jobs `redteam-gate` and `classifier`, manual `ml-smoke.yml`.
+
+### Not done yet: the actual training (needs you)
+**No classifier has been trained.** No dataset, no Modal run, no real metrics, no thresholds.
+Nothing in the repo claims otherwise: `docs/results/guard.md` is a marked TODO and `ml/data/README.md`
+has TODO counts. The exact steps are in `docs/MANUAL_TESTS.md` items 46 to 51 and in the header of
+`ml/modal_train.py`:
+```
+modal run ml/modal_train.py          # after uploading the dataset to the Modal volume (see the file)
+```
+Dataset size and verified-problem count, `model_card.json` metrics and thresholds, the p95 latency of
+each guard mode, and the artifact location you choose should be recorded here once they exist:
+- dataset size / verified problems: _TODO_
+- test metrics and thresholds (`model_card.json`): _TODO_
+- p95 latency per guard mode (`docs/results/guard.md`): _TODO_
+- artifact location: _TODO_ (suggested: Modal volume `aporia-leak-classifier`, then a private bundle
+  for `scripts/fetch_classifier.sh`)
+
+### Verified (what actually ran)
+- Fresh clone: lint, typecheck, build, extension tests, 462 API tests (10 skipped: Judge0, Postgres,
+  real model), evals (55), ml (36), knowledge validation, `actionlint`, contract diff.
+- **Smoke training** (`--smoke`: xsmall model, 50 steps, 200 templated records, CPU, about a minute)
+  ran end to end; **export** passed parity (fp32 vs PyTorch 0.000000, int8 0.0076 logits, 0
+  formatting mismatches in 40); the exported model loaded in the API and served a real hint through
+  the cascade (`classifier_pass`, `classifier_p` recorded). The smoke numbers (perfect scores) come from
+  templated text and mean nothing. The smoke model was **not** left enabled.
+- The dataset builder ran for real on a local model once (1 problem, 32 generations, 28 records):
+  plumbing only. The synthetic problem generator ran for real (2 problems; not committed).
+- Router + `llm_calls`: a real hint through Ollama wrote a row with tokens, latency and hint id.
+- OpenTelemetry: ran the API against a real `grafana/otel-lgtm` container; all five metrics arrived;
+  the dashboard imported and every panel query returned data. The panels' look is unverified.
+- Budget guard, cache keys and bypass rules, cascade thresholds and the call wrapper are unit-tested.
+
+### Caveats worth knowing
+- Training data will be label-noisy by construction (see `docs/DECISIONS.md`); inspect the
+  validation set before trusting the thresholds.
+- `build_references.py` needs Judge0, which does not work on this Mac; run it on a Linux host.
+- The hint cache key ignores the guard mode: clear `hintcache:*` after changing the classifier.
+- The red-team gate in CI is the offline (scripted-model) suite; a real-model re-run is still manual
+  and was last done before Stage 3.
