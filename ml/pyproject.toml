@@ -1,0 +1,26 @@
+[project]
+name = "aporia-ml"
+version = "0.1.0"
+description = "Aporia leak-classifier training and export (heavy dependencies live here, not in apps/api)"
+requires-python = ">=3.12"
+dependencies = [
+    "torch",
+    "transformers",
+    "accelerate",
+    "sentencepiece",
+    "protobuf",
+    "tokenizers",
+    "numpy",
+    "scikit-learn",
+    "onnx",
+    "onnxruntime",
+    "optimum[onnxruntime]",
+    "wandb",
+    "modal",
+    "pyyaml",
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.uv]
+package = false

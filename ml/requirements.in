@@ -1,0 +1,17 @@
+# Training and export dependencies. `requirements.txt` is generated from this file:
+#   cd ml && uv pip compile requirements.in -o requirements.txt --python-version 3.12
+torch
+transformers
+accelerate
+sentencepiece
+protobuf
+tokenizers
+numpy
+scikit-learn
+onnx
+onnxruntime
+optimum[onnxruntime]
+wandb
+modal
+pyyaml
+pytest
