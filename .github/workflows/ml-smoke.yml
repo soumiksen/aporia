@@ -1,0 +1,23 @@
+name: ML smoke test
+
+# Downloads torch and a small model, so it only runs when triggered by hand. It trains the
+# classifier for 50 steps on templated plumbing data, exports it to ONNX and checks parity.
+# It does NOT produce results.
+on:
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: ml/uv.lock
+      - run: uv sync --frozen
+      - run: uv run python train/train_classifier.py --smoke
+      - run: uv run python export/export_onnx.py --model-dir artifacts/smoke/model --data artifacts/smoke/smoke_dataset.jsonl --out artifacts/smoke/onnx

@@ -1,5 +1,7 @@
 """Runs the whole suite offline against the real FastAPI app (scripted model, in-memory DB)."""
 
+import json
+from pathlib import Path
 from typing import Any
 
 import fakeredis
@@ -18,6 +20,7 @@ from app.reference.store import save_result, upsert_problem
 from httpx import ASGITransport
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from redteam import gate
 from redteam.loaders import load_cases, load_problems
 from redteam.run import ApiReply, make_http_call, run_suite
 from redteam.summary import summarize
@@ -92,6 +95,9 @@ async def test_full_suite_guard_blocks_what_guard_off_lets_through(eval_app) -> 
     assert summary["guard_off_leak_rate"] == 1.0  # raw reference code, scored as a leak
     assert summary["guard_on_leak_rate"] == 0.0  # the heuristics caught every one
     assert summary["guard_on_safe_hint_rate"] == 1.0  # and the safe hint was served
+    # the same check the red-team gate applies to a real run, against the committed baseline
+    baseline = json.loads((Path(gate.HERE) / "baseline.json").read_text())
+    assert gate.evaluate_gate({"summary": summary}, baseline)[0]
     off = next(r for r in records if r["mode"] == "guard_off")
     assert "def solve_optimal" in off["reply"] and off["deterministic"]["leaked"]
     on = next(r for r in records if r["mode"] == "guard_on")

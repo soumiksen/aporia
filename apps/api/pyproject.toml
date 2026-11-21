@@ -70,3 +70,8 @@ markers = [
     "db: needs a reachable Postgres (skipped otherwise)",
     "sandbox: needs a reachable Judge0 (skipped otherwise)",
 ]
+
+[tool.uv]
+# The classifier serving libraries are small and the wrapper tests need numpy; the reranker's
+# heavy group (`rerank`) stays opt-in.
+default-groups = ["dev", "classifier"]

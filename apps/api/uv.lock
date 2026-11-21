@@ -229,6 +229,7 @@ wheels = [
 name = "api"
 version = "0.1.0"
 source = { virtual = "." }
+default-groups = ["classifier", "dev"]
 dependencies = [
     { name = "aiosqlite" },
     { name = "alembic" },
