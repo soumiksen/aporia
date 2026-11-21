@@ -52,7 +52,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 4.3 Concept notes (original content)
 - [x] 4.4 Embeddings and ingestion
 - [x] 4.5 Problem summaries and tagging
-- [ ] 4.6 Hybrid retrieval
+- [x] 4.6 Hybrid retrieval
 - [ ] 4.7 Learner model
 - [ ] 4.8 Use retrieval and learner data in hints
 - [ ] 4.9 Retrieval evaluation
