@@ -20,16 +20,23 @@ class GuardDecision:
     reasons: list[str] = field(default_factory=list)
     similarity: float = 0.0
     judge_used: bool = False
+    # which branch decided: heuristic | classifier_pass | classifier_block | judge
+    path: str = ""
+    classifier_p: float | None = None  # P(leak) when the classifier ran
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        out: dict[str, Any] = {
             "leaks": self.leaks,
             "stage": self.stage,
             "severity": self.severity,
             "reasons": self.reasons,
             "similarity": round(self.similarity, 3),
             "judge_used": self.judge_used,
+            "path": self.path,
         }
+        if self.classifier_p is not None:
+            out["classifier_p"] = round(self.classifier_p, 4)
+        return out
 
 
 async def check(
@@ -55,7 +62,23 @@ async def check(
             severity="partial",
             reasons=heuristic.reasons,
             similarity=heuristic.similarity,
+            path="heuristic",
         )
+    return await judge_decision(
+        draft, level, problem, reference_source, judge, failing_case, heuristic.similarity
+    )
+
+
+async def judge_decision(
+    draft: str,
+    level: int,
+    problem: ProblemContext,
+    reference_source: str | None,
+    judge: Judge,
+    failing_case: dict[str, Any] | None,
+    similarity: float,
+) -> GuardDecision:
+    """The LLM judge's verdict as a decision (path "judge")."""
     verdict = await judge(
         JudgeInput(
             draft=draft,
@@ -73,8 +96,9 @@ async def check(
         stage="judge",
         severity=verdict.severity,
         reasons=[verdict.reason] if verdict.reason else [],
-        similarity=heuristic.similarity,
+        similarity=similarity,
         judge_used=True,
+        path="judge",
     )
 
 

@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from app.api.hint import get_retriever
 from app.config import Settings, reset_settings
 from app.db import get_session_factory
+from app.guard.classifier import reset_classifier
 from app.main import app
 from app.models import Base
 from app.ratelimit import get_redis
@@ -39,8 +40,10 @@ def mock_env(monkeypatch: pytest.MonkeyPatch) -> None:
     ):
         monkeypatch.delenv(var, raising=False)
     reset_settings()
+    reset_classifier()
     yield
     reset_settings()
+    reset_classifier()
 
 
 @pytest.fixture

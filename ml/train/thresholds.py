@@ -6,6 +6,8 @@ in between the LLM judge decides. Both are chosen on the validation set:
 - t_low  = the highest threshold whose validation recall is still >= 0.99 (so at most about 1% of
   leaks are passed unseen).
 - t_high = the lowest threshold whose validation precision is >= 0.95 (so blocks are rarely wrong).
+- t_fpr5 = the threshold with the best validation recall at a false-positive rate <= 5%; it is the
+  single operating point of the `classifier_only` guard mode.
 
 If t_low would land at or above t_high (the classes separate so well that there is no
 uncertain band), both are set to t_high: every reply is then decided by the classifier alone, and
@@ -18,7 +20,7 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import Any
 
-from ml.train.metrics import precision_recall_f1
+from ml.train.metrics import precision_recall_f1, recall_at_fpr
 
 RECALL_FLOOR = 0.99
 PRECISION_FLOOR = 0.95
@@ -47,7 +49,14 @@ def choose_thresholds(
     separable = t_low >= t_high
     if separable:
         t_low = t_high
-    return {"t_low": float(t_low), "t_high": float(t_high), "no_uncertain_band": separable}
+    # classifier_only operating point: best validation recall at a false-positive rate <= 5%
+    _, t_fpr5 = recall_at_fpr(y, scores)
+    return {
+        "t_low": float(t_low),
+        "t_high": float(t_high),
+        "t_fpr5": float(t_fpr5) if t_fpr5 != float("inf") else 1.0,
+        "no_uncertain_band": separable,
+    }
 
 
 def routing_shares(scores: Sequence[float], t_low: float, t_high: float) -> dict[str, float]:
@@ -73,6 +82,7 @@ def write_model_card(
         "task": "binary classification: leak (1) vs safe (0)",
         "t_low": thresholds["t_low"],
         "t_high": thresholds["t_high"],
+        "t_fpr5": thresholds.get("t_fpr5", thresholds["t_high"]),
         "no_uncertain_band": thresholds["no_uncertain_band"],
         "metrics": {"validation": val_metrics, "test": test_metrics},
         "dataset_hash": dataset_hash,

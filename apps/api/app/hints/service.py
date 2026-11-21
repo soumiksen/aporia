@@ -65,6 +65,7 @@ class ProblemInfo:
     supported: bool
     reference: ReferenceData | None  # only a verified reference is ever used
     concepts: tuple[str, ...] = ()  # taxonomy slugs from the problem summary (empty if none yet)
+    summary: str = ""  # the stored concept summary (the classifier's [PROBLEM] text)
 
     @property
     def reference_source(self) -> str | None:
@@ -91,6 +92,7 @@ async def lookup_problem(
             summary_row = await session.get(ProblemSummary, row.slug)
             has_summary = summary_row is not None
             concepts = tuple(summary_row.concepts or []) if summary_row else ()
+            summary_text = summary_row.summary if summary_row else ""
             verified = reference if reference and reference.status == "verified" else None
             loaded = None
             if verified:
@@ -110,7 +112,7 @@ async def lookup_problem(
             await enqueue(req.problem.slug, payload)
         if enqueue_summary is not None and not has_summary:
             await enqueue_summary(req.problem.slug, payload)  # first time this problem is seen
-        return ProblemInfo(supported, loaded, concepts)
+        return ProblemInfo(supported, loaded, concepts, summary_text)
     except Exception as exc:  # noqa: BLE001
         logger.warning("problem lookup failed (%s); using prompt-only hints", type(exc).__name__)
         return ProblemInfo(is_supported(req.problem.meta)[0], None)

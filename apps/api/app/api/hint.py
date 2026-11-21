@@ -11,10 +11,11 @@ from app.config import Settings, get_settings
 from app.db import get_session_factory
 from app.grounding.context import render_for_prompt
 from app.grounding.service import ground
+from app.guard.cascade import cascade_check, resolve_mode
+from app.guard.classifier import get_classifier
 from app.guard.guard import (
     GuardDecision,
     GuardedResult,
-    check,
     flag_disabled,
     guard_enabled,
     guarded_reply,
@@ -131,6 +132,8 @@ async def post_hint(
     failing_case = grounding.facts.as_dict() if grounding.facts else None
     failure_kind = grounding.failure.kind if grounding.failure else None
     guard_on = guard_enabled(settings, x_aporia_disable_guard)
+    classifier = get_classifier()
+    guard_mode = resolve_mode(settings, classifier)
     # Evaluation-only switches (honoured only when APORIA_ENV=eval).
     use_rag = not flag_disabled(settings, x_aporia_disable_rag)
     use_memory = not flag_disabled(settings, x_aporia_disable_memory)
@@ -174,7 +177,7 @@ async def post_hint(
         )
 
     async def check_draft(draft: str) -> GuardDecision:
-        return await check(
+        return await cascade_check(
             draft,
             level,
             body.problem,
@@ -182,6 +185,9 @@ async def post_hint(
             judge,
             failing_case,
             context.note_texts,
+            mode=guard_mode,
+            classifier=classifier,
+            summary=info.summary,
         )
 
     async def events() -> AsyncIterator[str]:
