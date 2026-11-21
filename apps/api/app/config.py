@@ -39,6 +39,9 @@ class Settings(BaseSettings):
     aporia_embedding_model: str = ""
     aporia_rerank: bool = False  # cross-encoder rerank (needs `uv sync --group rerank`)
     aporia_require_reviewed_notes: bool = False  # ingest only notes marked reviewed: true
+    # Stage 5: the leak classifier and the guard mode.
+    aporia_classifier_dir: str = ""  # directory with model.onnx, tokenizer.json, model_card.json
+    aporia_guard_mode: str = ""  # prompted | classifier_only | cascade ("" = cascade if a model)
     aporia_internal_token: str = ""
     posthog_api_key: str = ""  # forwarding to PostHog is off unless this is set
     posthog_host: str = "https://us.i.posthog.com"

@@ -61,7 +61,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 5.1 Synthetic problem set
 - [x] 5.2 Leak dataset builder
 - [x] 5.3 Training code
-- [ ] 5.4 ONNX export and serving wrapper
+- [x] 5.4 ONNX export and serving wrapper
 - [ ] 5.5 Cascade guard
 - [ ] 5.6 Guard comparison
 - [ ] 5.7 Routing, caching, and cost tracking

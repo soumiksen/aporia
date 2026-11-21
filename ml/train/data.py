@@ -62,7 +62,12 @@ def format_records(
         p = problems[r["problem_slug"]]
         texts.append(
             format_input(
-                r["level"], p["summary"], reference_text(p["reference"]), r["reply"], adapter
+                r["level"],
+                p["summary"],
+                reference_text(p["reference"]),
+                r["reply"],
+                adapter,
+                max_tokens,
             )
         )
     return texts
