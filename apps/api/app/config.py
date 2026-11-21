@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     # Extra provider parameters passed to every LiteLLM call, as JSON, e.g. {"think": false} to
     # switch off reasoning on local Ollama models. Never put secrets here.
     aporia_llm_extra_params: dict[str, Any] = {}
+    # RAG. The user supplies the provider model string (e.g. an Ollama or OpenAI embedding model).
+    # Vectors shorter than EMBED_DIM are zero-padded (cosine similarity is unchanged).
+    aporia_embedding_model: str = ""
+    aporia_rerank: bool = False  # cross-encoder rerank (needs `uv sync --group rerank`)
+    aporia_require_reviewed_notes: bool = False  # ingest only notes marked reviewed: true
     aporia_internal_token: str = ""
     posthog_api_key: str = ""  # forwarding to PostHog is off unless this is set
     posthog_host: str = "https://us.i.posthog.com"
