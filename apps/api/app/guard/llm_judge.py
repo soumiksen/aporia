@@ -43,7 +43,7 @@ Judge = Callable[[JudgeInput], Awaitable[GuardVerdict]]
 
 
 def build_judge_messages(inp: JudgeInput) -> list[dict[str, str]]:
-    system, template = load_prompt("guard_judge_v2")
+    system, template = load_prompt("guard_judge_v3")
     user = render(
         template,
         {

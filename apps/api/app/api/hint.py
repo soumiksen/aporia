@@ -11,11 +11,20 @@ from app.config import Settings, get_settings
 from app.db import get_session_factory
 from app.grounding.context import render_for_prompt
 from app.grounding.service import ground
-from app.guard.guard import GuardDecision, GuardedResult, check, guard_enabled, guarded_reply
+from app.guard.guard import (
+    GuardDecision,
+    GuardedResult,
+    check,
+    flag_disabled,
+    guard_enabled,
+    guarded_reply,
+)
 from app.guard.llm_judge import Judge, get_judge
 from app.hints.ladder import after_hint, next_level, with_attempts
+from app.hints.retrieval_context import EMPTY, DbRetriever, RetrievalContext, Retriever
 from app.hints.service import (
     SessionFactory,
+    attempt_seen,
     build_messages,
     chunk_text,
     device_hash,
@@ -25,7 +34,9 @@ from app.hints.service import (
     save_hint,
 )
 from app.hints.state_store import load_state, save_state
+from app.learner.describe import describe_failure
 from app.llm.gateway import LLMConfigError, complete, ensure_configured
+from app.rag.embedder import get_embedder
 from app.ratelimit import enforce_rate_limit, get_redis, require_device
 from app.reference.queue import Enqueue, get_enqueue, get_enqueue_summary
 from app.sandbox.base import SandboxRunner
@@ -45,6 +56,15 @@ Generator = Callable[..., Awaitable[str]]
 
 def get_generator() -> Generator:
     return complete
+
+
+def get_retriever(
+    factory: SessionFactory = Depends(get_session_factory),
+    redis_client: redis.asyncio.Redis = Depends(get_redis),
+) -> Retriever | None:
+    """None when RAG is not configured (no embedding model): hints stay prompt-only."""
+    embedder = get_embedder(redis_client)
+    return DbRetriever(factory, embedder) if embedder else None
 
 
 def sse(event: str, payload: str) -> str:
@@ -72,8 +92,11 @@ async def post_hint(
     generator: Generator = Depends(get_generator),
     judge: Judge = Depends(get_judge),
     runner: SandboxRunner = Depends(get_runner),
+    retriever: Retriever | None = Depends(get_retriever),
     settings: Settings = Depends(get_settings),
     x_aporia_disable_guard: str | None = Header(default=None),
+    x_aporia_disable_rag: str | None = Header(default=None),
+    x_aporia_disable_memory: str | None = Header(default=None),
 ) -> StreamingResponse:
     length = request.headers.get("content-length")
     if length and length.isdigit() and int(length) > MAX_BODY_BYTES:
@@ -108,6 +131,29 @@ async def post_hint(
     failing_case = grounding.facts.as_dict() if grounding.facts else None
     failure_kind = grounding.failure.kind if grounding.failure else None
     guard_on = guard_enabled(settings, x_aporia_disable_guard)
+    # Evaluation-only switches (honoured only when APORIA_ENV=eval).
+    use_rag = not flag_disabled(settings, x_aporia_disable_rag)
+    use_memory = not flag_disabled(settings, x_aporia_disable_memory)
+    failure_text = (
+        describe_failure(grounding.failure.kind, grounding.failure.input)
+        if grounding.failure
+        else None
+    )
+    context: RetrievalContext = EMPTY
+    if retriever and (use_rag or use_memory):
+        try:
+            context = await retriever.gather(
+                level=level,
+                slug=slug,
+                concepts=info.concepts,
+                failure_text=failure_text,
+                device=device,
+                use_rag=use_rag,
+                use_memory=use_memory,
+            )
+        except Exception as exc:  # noqa: BLE001 - retrieval never blocks a hint
+            logger.warning("retrieval failed: %s", type(exc).__name__)
+    retrieval_text = context.render()
     metadata: dict[str, Any] = {"hint_id": hint_id, "level": level, "device_hash": device}
     logger.info(
         "hint requested slug=%s level=%d hint_id=%s guard=%s grounding=%s kind=%s ms=%d",
@@ -122,13 +168,21 @@ async def post_hint(
 
     async def generate(feedback: str | None) -> str:
         return await generator(
-            build_messages(body, level, feedback, grounding_text),
+            build_messages(body, level, feedback, grounding_text, retrieval_text),
             "APORIA_MODEL_FAST",
             metadata=metadata,
         )
 
     async def check_draft(draft: str) -> GuardDecision:
-        return await check(draft, level, body.problem, info.reference_source, judge, failing_case)
+        return await check(
+            draft,
+            level,
+            body.problem,
+            info.reference_source,
+            judge,
+            failing_case,
+            context.note_texts,
+        )
 
     async def events() -> AsyncIterator[str]:
         try:
@@ -157,6 +211,7 @@ async def post_hint(
             grounded=grounding.grounded,
             failure_kind=failure_kind,
         )
+        new_code = not await attempt_seen(factory, device, slug, body.code)
         await save_attempt(
             factory,
             device=device,
@@ -167,6 +222,15 @@ async def post_hint(
             if grounding.failure
             else None,
         )
+        if retriever:
+            verdict = body.last_verdict or ("Wrong Answer" if grounding.failure else None)
+            await retriever.remember(
+                device=device,
+                slug=slug,
+                concepts=info.concepts,
+                failure_text=failure_text,
+                verdict=verdict if new_code else None,  # one BKT observation per distinct code
+            )
         for chunk in chunk_text(result.text):
             yield sse("token", TokenEvent(text=chunk).model_dump_json())
         done = DoneEvent(
@@ -175,6 +239,7 @@ async def post_hint(
             supported=info.supported,
             grounded=grounding.grounded,
             failure_kind=failure_kind,
+            sources=[] if result.used_safe_hint else context.sources,
         )
         yield sse("done", done.model_dump_json())
 

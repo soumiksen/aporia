@@ -5,13 +5,17 @@ import builtins
 import json
 import re
 import textwrap
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from difflib import SequenceMatcher
 from typing import Any
 
+from app.rag.text import shares_run, shares_run_with_any
+
 SIMILARITY_THRESHOLD = 0.6  # block when AST similarity to the reference reaches this
 MAX_CODE_LINES_LEVELS_1_3 = 3  # a fenced block longer than this is blocked at levels 1 to 3
+STATEMENT_RUN_WORDS = 8  # level 4: a verbatim run this long from the problem is a restatement
+SOURCE_RUN_WORDS = 12  # a verbatim run this long from a study note is a quote
 MIN_SHINGLES_FOR_CONTAINMENT = 8
 SHINGLE_SIZE = 4
 
@@ -268,8 +272,15 @@ def check_heuristics(
     level: int,
     reference_source: str | None = None,
     failing_case: dict[str, Any] | None = None,
+    statement: str | None = None,
+    sources: Sequence[str] = (),
 ) -> HeuristicResult:
     result = HeuristicResult()
+
+    if level == 4 and statement and shares_run(draft, statement, STATEMENT_RUN_WORDS):
+        result.reasons.append("restates_problem")  # the worked example must be a new problem
+    if sources and shares_run_with_any(draft, sources, SOURCE_RUN_WORDS):
+        result.reasons.append("quotes_source")  # study notes are background, never quoted
 
     if failing_case and reveals_expected_output(
         draft, failing_case.get("expected"), failing_case.get("actual"), failing_case.get("input")

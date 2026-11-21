@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -27,10 +27,18 @@ class TokenEvent(BaseModel):
     text: str
 
 
+class Source(BaseModel):
+    """A study note the hint was based on (shown as a "Based on" chip)."""
+
+    type: Literal["note"] = "note"
+    slug: str  # concept slug
+    heading: str
+
+
 class DoneEvent(BaseModel):
     hint_id: str
     level: int
-    sources: list[str] = Field(default_factory=list)
+    sources: list[Source] = Field(default_factory=list)
     supported: bool = True  # False: prompt-only hints, code cannot be run for this problem
     grounded: bool = False  # True: the hint cites a real minimal failing case
     failure_kind: str | None = None  # wrong_answer | runtime_error | timeout when grounded

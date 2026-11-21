@@ -31,10 +31,15 @@ def chunk_text(text: str, size: int = CHUNK_CHARS) -> list[str]:
 
 
 def build_messages(
-    req: HintRequest, level: int, feedback: str | None = None, grounding: str = ""
+    req: HintRequest,
+    level: int,
+    feedback: str | None = None,
+    grounding: str = "",
+    retrieval: str = "",
 ) -> list[dict[str, str]]:
     """Level prompt with the student's data filled in. `feedback` is the leak-guard rejection;
-    `grounding` is the rendered failing-case section (empty when there is none)."""
+    `grounding` is the rendered failing-case section and `retrieval` the notes / past-mistakes /
+    analogous-problems blocks (both empty when there is none)."""
     version = get_settings().aporia_prompt_version
     system, user_template = load_prompt(f"hint_l{level}_{version}")
     user = render(
@@ -49,6 +54,7 @@ def build_messages(
             "student_message": req.student_message or "",
             "feedback": feedback or "",
             "grounding": grounding,
+            "retrieval": retrieval,
         },
     )
     return [{"role": "system", "content": system}, {"role": "user", "content": user}]
@@ -58,6 +64,7 @@ def build_messages(
 class ProblemInfo:
     supported: bool
     reference: ReferenceData | None  # only a verified reference is ever used
+    concepts: tuple[str, ...] = ()  # taxonomy slugs from the problem summary (empty if none yet)
 
     @property
     def reference_source(self) -> str | None:
@@ -81,7 +88,9 @@ async def lookup_problem(
             reference = await latest_reference(session, row.slug)
             await session.commit()
             supported = row.supported
-            has_summary = await session.get(ProblemSummary, row.slug) is not None
+            summary_row = await session.get(ProblemSummary, row.slug)
+            has_summary = summary_row is not None
+            concepts = tuple(summary_row.concepts or []) if summary_row else ()
             verified = reference if reference and reference.status == "verified" else None
             loaded = None
             if verified:
@@ -101,7 +110,7 @@ async def lookup_problem(
             await enqueue(req.problem.slug, payload)
         if enqueue_summary is not None and not has_summary:
             await enqueue_summary(req.problem.slug, payload)  # first time this problem is seen
-        return ProblemInfo(supported, loaded)
+        return ProblemInfo(supported, loaded, concepts)
     except Exception as exc:  # noqa: BLE001
         logger.warning("problem lookup failed (%s); using prompt-only hints", type(exc).__name__)
         return ProblemInfo(is_supported(req.problem.meta)[0], None)
@@ -142,6 +151,22 @@ async def save_hint(
 
 def code_hash(code: str) -> str:
     return hashlib.sha256(code.encode()).hexdigest()
+
+
+async def attempt_seen(factory: SessionFactory, device: str, slug: str, code: str) -> bool:
+    """Whether this device already asked about this exact code (compared by hash)."""
+    try:
+        async with factory() as session:
+            found = await session.scalar(
+                select(Attempt.id).where(
+                    Attempt.device_hash == device,
+                    Attempt.problem_slug == slug,
+                    Attempt.code_hash == code_hash(code),
+                )
+            )
+            return found is not None
+    except Exception:  # noqa: BLE001
+        return True  # when unsure, do not count it twice
 
 
 async def save_attempt(

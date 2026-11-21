@@ -395,6 +395,8 @@ export interface operations {
             query?: never;
             header?: {
                 "x-aporia-disable-guard"?: string | null;
+                "x-aporia-disable-rag"?: string | null;
+                "x-aporia-disable-memory"?: string | null;
                 "x-aporia-device"?: string | null;
             };
             path?: never;

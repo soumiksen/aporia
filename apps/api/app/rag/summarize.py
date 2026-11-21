@@ -4,7 +4,6 @@ Only the summary, tags and embedding are stored. Never the statement, examples o
 """
 
 import logging
-import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
@@ -18,6 +17,7 @@ from app.llm.prompts import load_prompt, render
 from app.models import ProblemSummary
 from app.rag.embedder import Embedder
 from app.rag.taxonomy import Taxonomy
+from app.rag.text import shares_run
 from app.reference.store import upsert_problem
 
 logger = logging.getLogger("aporia.rag")
@@ -43,17 +43,9 @@ class SummaryResult:
     needs_review: bool
 
 
-def _words(text: str) -> list[str]:
-    return re.findall(r"[a-z0-9']+", text.lower())
-
-
 def copies_statement(summary: str, statement: str, run: int = COPY_RUN_WORDS) -> bool:
     """True if the summary repeats `run` or more consecutive words of the statement."""
-    s, t = _words(summary), _words(statement)
-    if len(s) < run or len(t) < run:
-        return False
-    grams = {tuple(t[i : i + run]) for i in range(len(t) - run + 1)}
-    return any(tuple(s[i : i + run]) in grams for i in range(len(s) - run + 1))
+    return shares_run(summary, statement, run)
 
 
 def validate(raw: RawSummary, taxonomy: Taxonomy, statement: str) -> list[str]:

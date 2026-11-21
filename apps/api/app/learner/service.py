@@ -4,6 +4,7 @@ Stores concept ids, one-sentence descriptions and embeddings. Never code.
 """
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import UTC, datetime
 
 from sqlalchemy import select, update
@@ -113,3 +114,40 @@ async def weak_concepts(
 def overlapping(weak: Sequence[tuple[str, float]], concepts: Sequence[str]) -> list[str]:
     wanted = set(concepts)
     return [c for c, _ in weak if c in wanted]
+
+
+# Cosine similarity a past mistake must reach to be recalled. Tuned against the retrieval eval.
+MISTAKE_SIMILARITY_THRESHOLD = 0.6
+
+
+@dataclass(frozen=True)
+class MistakeHit:
+    id: int
+    concept: str
+    description: str
+    similarity: float
+
+
+async def similar_mistakes(
+    session: AsyncSession,
+    embedder: Embedder,
+    device_hash: str,
+    query: str,
+    exclude_slug: str | None = None,
+    k: int = 3,
+    threshold: float = MISTAKE_SIMILARITY_THRESHOLD,
+) -> list[MistakeHit]:
+    """This device's past mistakes (on other problems) closest to the query, above a threshold."""
+    vector = (await embedder.embed([query]))[0]
+    distance = Mistake.embedding.cosine_distance(vector)
+    stmt = (
+        select(Mistake, (1 - distance).label("similarity"))
+        .where(Mistake.device_hash == device_hash, Mistake.embedding.is_not(None))
+        .order_by(distance, Mistake.id)
+        .limit(k * 3)
+    )
+    if exclude_slug:
+        stmt = stmt.where(Mistake.problem_slug != exclude_slug)
+    rows = (await session.execute(stmt)).all()
+    hits = [MistakeHit(m.id, m.concept_slug, m.description, float(sim)) for m, sim in rows]
+    return [h for h in hits if h.similarity >= threshold][:k]

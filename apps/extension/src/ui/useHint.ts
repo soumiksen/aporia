@@ -48,7 +48,12 @@ export function useHint() {
       const { event } = data;
       if (event.event === "token") store.append(event.text);
       else if (event.event === "done")
-        store.finish({ hintId: event.hint_id, level: event.level, supported: event.supported });
+        store.finish({
+          hintId: event.hint_id,
+          level: event.level,
+          supported: event.supported,
+          sources: event.sources,
+        });
       else store.fail(event.code, event.message);
     });
   }, []);

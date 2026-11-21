@@ -9,6 +9,7 @@ import { LevelBadge } from "@/components/LevelBadge";
 import type { MascotMood } from "@/components/Mascot";
 import { Panel } from "@/components/Panel";
 import { StudentMessageBox } from "@/components/StudentMessageBox";
+import { BasedOn } from "@/components/BasedOn";
 import { UnsupportedBanner } from "@/components/UnsupportedBanner";
 import { NudgeBubble } from "@/components/NudgeBubble";
 import { StuckLabelPrompt } from "@/components/StuckLabelPrompt";
@@ -24,6 +25,7 @@ export function App() {
   const text = useHintStore((s) => s.text);
   const level = useHintStore((s) => s.level);
   const supported = useHintStore((s) => s.supported);
+  const sources = useHintStore((s) => s.sources);
   const rated = useHintStore((s) => s.rated);
   const errorMessage = useHintStore((s) => s.errorMessage);
 
@@ -104,6 +106,7 @@ export function App() {
           ) : (
             <HintView status={status} text={text} />
           )}
+          {status === "done" && <BasedOn sources={sources} />}
           <HintActions
             status={status}
             level={level}

@@ -160,3 +160,38 @@ async def test_problems_overlap_and_exclusion(pg) -> None:
     assert "zz-p1" not in slugs and slugs[0] == "zz-p3" and "zz-p2" not in slugs
     both = await retrieve(session, emb, "heap values", "problems", 5, "vector", concepts=["zz-b"])
     assert {h.slug for h in both} == {"zz-p2", "zz-p3"}
+
+
+@pytest.mark.db
+async def test_similar_mistakes_are_per_device_thresholded_and_exclude_current(pg) -> None:
+    from app.learner.service import similar_mistakes
+    from app.models import Mistake
+
+    session, emb = pg
+    for slug in ("zz-m1", "zz-m2"):
+        session.add(Problem(slug=slug, title=slug, difficulty="Easy", tags=[], supported=False))
+    await session.flush()
+    rows = [
+        ("zz-dev", "zz-m1", "Returns a wrong answer when the array is empty."),
+        ("zz-dev", "zz-m2", "Crashes when the string has a single character."),
+        ("zz-other", "zz-m1", "Returns a wrong answer when the array is empty."),
+    ]
+    vecs = await emb.embed([r[2] for r in rows])
+    for (dev, slug, text), v in zip(rows, vecs, strict=True):
+        session.add(
+            Mistake(
+                device_hash=dev,
+                problem_slug=slug,
+                concept_slug="zz-a",
+                description=text,
+                embedding=v,
+            )
+        )
+    await session.flush()
+    q = "wrong answer when the array is empty"
+    hits = await similar_mistakes(session, emb, "zz-dev", q, exclude_slug="zz-m2")
+    assert [h.description for h in hits] == ["Returns a wrong answer when the array is empty."]
+    assert hits[0].similarity >= 0.6
+    assert await similar_mistakes(session, emb, "zz-dev", q, exclude_slug="zz-m1") == []
+    assert await similar_mistakes(session, emb, "nobody", q) == []
+    assert await similar_mistakes(session, emb, "zz-dev", "completely unrelated words here") == []

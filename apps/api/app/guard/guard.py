@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -39,12 +39,15 @@ async def check(
     reference_source: str | None,
     judge: Judge,
     failing_case: dict[str, Any] | None = None,
+    sources: Sequence[str] = (),
 ) -> GuardDecision:
     """Heuristics first (cheap, deterministic); the LLM judge runs only if they pass.
 
     Raises if the judge fails: the caller must treat any exception as "cannot approve".
     """
-    heuristic = check_heuristics(draft, level, reference_source, failing_case)
+    heuristic = check_heuristics(
+        draft, level, reference_source, failing_case, problem.content_text, sources
+    )
     if heuristic.blocked:
         return GuardDecision(
             leaks=True,
@@ -131,3 +134,9 @@ async def guarded_reply(
 def guard_enabled(settings: Settings, disable_header: str | None) -> bool:
     """The guard can only be switched off for evaluation: header honoured iff APORIA_ENV=eval."""
     return not (settings.aporia_env == "eval" and disable_header == "1")
+
+
+def flag_disabled(settings: Settings, header: str | None) -> bool:
+    """Evaluation-only feature switches (X-Aporia-Disable-RAG / -Memory): honoured only when
+    APORIA_ENV=eval, ignored everywhere else."""
+    return settings.aporia_env == "eval" and header == "1"

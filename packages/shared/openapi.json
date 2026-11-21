@@ -536,6 +536,38 @@
           },
           {
             "in": "header",
+            "name": "x-aporia-disable-rag",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Disable-Rag"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-aporia-disable-memory",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Disable-Memory"
+            }
+          },
+          {
+            "in": "header",
             "name": "x-aporia-device",
             "required": false,
             "schema": {

@@ -5,6 +5,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
+from app.api.hint import get_retriever
 from app.config import Settings, reset_settings
 from app.db import get_session_factory
 from app.main import app
@@ -83,6 +84,7 @@ async def client(redis, db_session_factory, enqueue_calls, summary_calls):
         return True
 
     app.dependency_overrides[get_enqueue] = lambda: fake_enqueue
+    app.dependency_overrides[get_retriever] = lambda: None  # tests opt in with a fake retriever
     app.dependency_overrides[get_enqueue_summary] = lambda: fake_enqueue_summary
     # By default there is no sandbox in tests: grounding degrades to prompt-only.
     no_sandbox = FakeRunner([SandboxError("no sandbox in tests")])
@@ -92,4 +94,5 @@ async def client(redis, db_session_factory, enqueue_calls, summary_calls):
     app.dependency_overrides.pop(get_session_factory, None)
     app.dependency_overrides.pop(get_enqueue, None)
     app.dependency_overrides.pop(get_enqueue_summary, None)
+    app.dependency_overrides.pop(get_retriever, None)
     app.dependency_overrides.pop(get_runner, None)

@@ -55,13 +55,21 @@ export const hintRequestSchema = z.object({
 export type HintRequest = z.input<typeof hintRequestSchema>;
 
 /** Events relayed from the service worker to the content script. */
+/** A study note a hint was based on (shown as a "Based on" chip). */
+export const sourceSchema = z.object({
+  type: z.string(),
+  slug: z.string(),
+  heading: z.string(),
+});
+export type Source = z.infer<typeof sourceSchema>;
+
 export const hintEventSchema = z.discriminatedUnion("event", [
   z.object({ event: z.literal("token"), text: z.string() }),
   z.object({
     event: z.literal("done"),
     hint_id: z.string(),
     level: z.number(),
-    sources: z.array(z.unknown()),
+    sources: z.array(sourceSchema).default([]),
     // false: the API cannot run code for this problem, so hints are prompt-only
     supported: z.boolean().default(true),
   }),
