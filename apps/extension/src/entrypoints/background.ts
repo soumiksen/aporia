@@ -5,6 +5,7 @@ import { postEvents } from "../lib/events/post";
 import { EventQueue } from "../lib/events/queue";
 import { initSentry } from "../lib/sentry";
 import { onMessage, sendMessage } from "../lib/protocol";
+import { postAttempt } from "../lib/attempt";
 import { postRating } from "../lib/rating";
 import { streamHint } from "../lib/sse";
 
@@ -36,6 +37,15 @@ export default defineBackground({
     });
 
     onMessage("getDeviceId", () => getOrCreateDeviceId(browser.storage.local));
+
+    onMessage("reportAttempt", async ({ data }) => {
+      await postAttempt({
+        apiUrl: API_URL,
+        deviceId: await getOrCreateDeviceId(browser.storage.local),
+        slug: data.slug,
+        verdict: data.verdict,
+      });
+    });
 
     onMessage("rateHint", async ({ data }) =>
       postRating({

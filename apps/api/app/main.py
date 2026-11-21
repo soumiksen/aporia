@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.api import events, health, hint, internal
+from app.api import attempts, events, health, hint, internal
 from app.config import get_settings
 from app.observability import init_sentry
 
@@ -11,3 +11,4 @@ app.include_router(health.router)
 app.include_router(hint.router)
 app.include_router(internal.router)
 app.include_router(events.router)
+app.include_router(attempts.router)

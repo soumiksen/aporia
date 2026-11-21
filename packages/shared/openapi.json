@@ -1,6 +1,31 @@
 {
   "components": {
     "schemas": {
+      "AttemptRequest": {
+        "additionalProperties": false,
+        "description": "A submission outcome. No code, ever (extra fields are rejected).",
+        "properties": {
+          "slug": {
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "^[a-z0-9][a-z0-9-]*$",
+            "title": "Slug",
+            "type": "string"
+          },
+          "verdict": {
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "verdict"
+        ],
+        "title": "AttemptRequest",
+        "type": "object"
+      },
       "EventBatch": {
         "additionalProperties": false,
         "properties": {
@@ -380,6 +405,56 @@
           }
         },
         "summary": "Readyz"
+      }
+    },
+    "/v1/attempts": {
+      "post": {
+        "description": "Updates the learner model for the problem's concepts. Storage errors never fail the call.",
+        "operationId": "post_attempt_v1_attempts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-aporia-device",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Aporia-Device"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AttemptRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Attempt"
       }
     },
     "/v1/events": {

@@ -21,6 +21,8 @@ interface ProtocolMap {
   getIdleState(): boolean;
   /** Content script -> service worker. Rates a delivered hint (1 = not helpful, 5 = great). */
   rateHint(data: { hintId: string; rating: number }): boolean;
+  /** Content script -> service worker. Reports an Accepted submission (slug + verdict, no code). */
+  reportAttempt(data: { slug: string; verdict: string }): void;
   /** Any context -> service worker. Returns (creating if needed) the device UUID. */
   getDeviceId(): string;
   /** Service worker -> content script (tab). One streamed event. */

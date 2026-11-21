@@ -1,6 +1,8 @@
 import { PROBLEM_MATCH_PATTERN, SITE_MATCH_PATTERN } from "../lib/leetcode/constants";
 import { fetchProblem, slugFromPath } from "../lib/leetcode/metadata";
+import { verdictToReport } from "../lib/attempt";
 import { parseBridgeMessage } from "../lib/messages";
+import { sendMessage } from "../lib/protocol";
 import { pageStore, resetPageState } from "../lib/page-state";
 import { MatchPattern } from "wxt/utils/match-patterns";
 import { createRoot } from "react-dom/client";
@@ -38,6 +40,11 @@ export default defineContentScript({
         pageStore.setState({ code: msg.code, language: msg.language });
       } else {
         const accepted = msg.statusMessage === "Accepted";
+        const reported = verdictToReport(msg);
+        const slug = pageStore.getState().slug;
+        if (reported && slug) {
+          sendMessage("reportAttempt", { slug, verdict: reported }).catch(() => undefined);
+        }
         pageStore.setState({
           failedSinceHint: pageStore.getState().failedSinceHint + (accepted ? 0 : 1),
           lastVerdict: {
