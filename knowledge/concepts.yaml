@@ -1,0 +1,162 @@
+# Concept taxonomy. Prerequisites must exist and form no cycle (validated by app/rag/taxonomy.py).
+concepts:
+  - slug: hash-map-lookup
+    name: Hash map lookup
+    aliases: ["hash map", "dictionary", "lookup table"]
+    prerequisites: []
+  - slug: frequency-counting
+    name: Frequency counting
+    aliases: ["counter", "counting occurrences", "histogram"]
+    prerequisites: [hash-map-lookup]
+  - slug: prefix-sums
+    name: Prefix sums
+    aliases: ["running sum", "cumulative sum", "range sum"]
+    prerequisites: []
+  - slug: sorting
+    name: Sorting and custom order
+    aliases: ["sort", "comparator"]
+    prerequisites: []
+  - slug: two-pointers
+    name: Two pointers
+    aliases: ["left right pointers", "opposite ends"]
+    prerequisites: [sorting]
+  - slug: sliding-window
+    name: Sliding window
+    aliases: ["window", "subarray window", "substring window"]
+    prerequisites: [two-pointers]
+  - slug: binary-search-index
+    name: Binary search on an index
+    aliases: ["bisect", "sorted search"]
+    prerequisites: [invariants]
+  - slug: binary-search-answer
+    name: Binary search on the answer
+    aliases: ["search the answer space", "parametric search"]
+    prerequisites: [binary-search-index]
+  - slug: stack
+    name: Stack
+    aliases: ["lifo", "matching brackets"]
+    prerequisites: []
+  - slug: monotonic-stack
+    name: Monotonic stack
+    aliases: ["next greater element", "decreasing stack"]
+    prerequisites: [stack]
+  - slug: monotonic-queue
+    name: Monotonic queue
+    aliases: ["sliding window maximum", "deque window"]
+    prerequisites: [sliding-window, monotonic-stack]
+  - slug: linked-list-manipulation
+    name: Linked list manipulation
+    aliases: ["pointer rewiring", "reverse list", "dummy node"]
+    prerequisites: []
+  - slug: fast-slow-pointers
+    name: Fast and slow pointers
+    aliases: ["tortoise and hare", "cycle detection", "middle node"]
+    prerequisites: [linked-list-manipulation, two-pointers]
+  - slug: recursion-base-cases
+    name: Recursion and base cases
+    aliases: ["recursive thinking", "recursion"]
+    prerequisites: []
+  - slug: tree-dfs
+    name: Tree depth-first search
+    aliases: ["preorder", "inorder", "postorder", "tree recursion"]
+    prerequisites: [recursion-base-cases]
+  - slug: tree-bfs
+    name: Tree breadth-first search
+    aliases: ["level order", "tree levels"]
+    prerequisites: []
+  - slug: bst-properties
+    name: Binary search tree properties
+    aliases: ["bst", "ordered tree"]
+    prerequisites: [tree-dfs]
+  - slug: heap-priority-queue
+    name: Heap and priority queue
+    aliases: ["top k", "min heap", "max heap"]
+    prerequisites: [sorting]
+  - slug: graph-dfs
+    name: Graph depth-first search
+    aliases: ["connected components", "flood fill", "visited set"]
+    prerequisites: [recursion-base-cases]
+  - slug: graph-bfs
+    name: Graph breadth-first search
+    aliases: ["shortest path unweighted", "multi-source bfs", "queue traversal"]
+    prerequisites: []
+  - slug: topological-sort
+    name: Topological sort
+    aliases: ["dependency ordering", "course schedule", "indegree"]
+    prerequisites: [graph-bfs, graph-dfs]
+  - slug: union-find
+    name: Union-find
+    aliases: ["disjoint set", "connectivity merging"]
+    prerequisites: [graph-dfs]
+  - slug: shortest-path
+    name: Shortest path in weighted graphs
+    aliases: ["dijkstra", "weighted edges"]
+    prerequisites: [graph-bfs, heap-priority-queue]
+  - slug: matrix-traversal
+    name: Matrix and grid traversal
+    aliases: ["grid", "directions array", "2d array walk"]
+    prerequisites: [graph-bfs, graph-dfs]
+  - slug: backtracking
+    name: Backtracking
+    aliases: ["choose explore undo", "permutations", "subsets", "search tree pruning"]
+    prerequisites: [recursion-base-cases]
+  - slug: memoization
+    name: Memoization
+    aliases: ["caching subproblems", "top-down dp"]
+    prerequisites: [recursion-base-cases]
+  - slug: dp-state-definition
+    name: Dynamic programming state definition
+    aliases: ["dp state", "what does dp[i] mean"]
+    prerequisites: [memoization]
+  - slug: dp-1d
+    name: One-dimensional dynamic programming
+    aliases: ["dp array", "linear dp"]
+    prerequisites: [dp-state-definition]
+  - slug: dp-2d
+    name: Two-dimensional dynamic programming
+    aliases: ["grid dp", "two sequence dp"]
+    prerequisites: [dp-1d]
+  - slug: dp-knapsack
+    name: Knapsack-style dynamic programming
+    aliases: ["subset sum", "coin change", "bounded choices"]
+    prerequisites: [dp-1d]
+  - slug: greedy
+    name: Greedy strategies
+    aliases: ["local optimum", "exchange argument"]
+    prerequisites: [sorting]
+  - slug: intervals
+    name: Intervals
+    aliases: ["merge intervals", "overlapping ranges", "sweep line"]
+    prerequisites: [sorting]
+  - slug: bit-manipulation
+    name: Bit manipulation
+    aliases: ["bitwise", "xor tricks", "bitmask"]
+    prerequisites: []
+  - slug: math-number-theory
+    name: Math and number theory basics
+    aliases: ["gcd", "modulo", "primes"]
+    prerequisites: []
+  - slug: string-manipulation
+    name: String manipulation
+    aliases: ["palindrome", "anagram", "substring"]
+    prerequisites: []
+  - slug: tries
+    name: Tries
+    aliases: ["prefix tree", "autocomplete"]
+    prerequisites: [tree-dfs, string-manipulation]
+  - slug: divide-and-conquer
+    name: Divide and conquer
+    aliases: ["merge sort style", "split and combine"]
+    prerequisites: [recursion-base-cases]
+  - slug: complexity-analysis
+    name: Complexity analysis
+    aliases: ["big o", "time and space", "amortized"]
+    prerequisites: []
+  - slug: edge-case-reasoning
+    name: Edge-case reasoning
+    aliases: ["off by one", "empty input", "boundary cases"]
+    prerequisites: []
+  - slug: invariants
+    name: Loop invariants
+    aliases: ["invariant", "what stays true", "loop reasoning"]
+    prerequisites: [edge-case-reasoning]
