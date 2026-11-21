@@ -10,7 +10,7 @@ A DeBERTa-v3 binary classifier (`leak` vs `safe`) that the cascade guard runs be
 | 4. smoke test | `cd ml && uv run python train/train_classifier.py --smoke` | CPU, about a minute |
 | 5. train | `modal run ml/modal_train.py` (see the file's header) | **Modal GPU, you run it** |
 | 6. export | `cd ml && uv run python export/export_onnx.py ...` | local CPU |
-| 7. serve | `APORIA_CLASSIFIER_DIR=... ` in the API | `app/guard/classifier.py` |
+| 7. serve | set `APORIA_CLASSIFIER_DIR` for the API (clear `hintcache:*` in Redis after swapping) | `app/guard/classifier.py` |
 | 8. compare | `evals/guard_compare/run.py` | local, after training |
 
 The heavy dependencies (torch, transformers, optimum) live in `ml/pyproject.toml` (`cd ml && uv sync`),

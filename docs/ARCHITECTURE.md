@@ -37,7 +37,15 @@ aporia/
   Judge0 through a `SandboxRunner` interface.
 - **LLM gateway**: LiteLLM routing/fallback/caching; structured output via Instructor.
 - **Leak guard**: deterministic heuristics (code blocks, AST similarity to the reference, correctness
-  claims, expected-output reveal), then an LLM judge, rewrite once, else a deterministic safe hint.
+  claims, expected-output reveal), then a **cascade**: an int8 ONNX DeBERTa classifier
+  (`app/guard/classifier.py`) passes or blocks the clear cases and only uncertain replies reach the
+  LLM judge (`app/guard/cascade.py`; modes `prompted`, `classifier_only`, `cascade`). A leak is
+  rewritten once, else a deterministic safe hint. Training and export live in `ml/`.
+- **Routing, cache and cost** (`app/llm/`, `app/hints/cache.py`): a LiteLLM Router with groups fast
+  (levels 1-2), strong (3-4) and judge, a 1-hour hint cache, an `llm_calls` table written by one
+  wrapper, and a daily budget guard.
+- **Observability** (`app/telemetry/`): OpenTelemetry traces and metrics, enabled only when
+  `OTEL_EXPORTER_OTLP_ENDPOINT` is set; Grafana LGTM profile and dashboard in `infra/`.
 - **Grounding** (`app/grounding/`): failing-case finder, shrinker, context builder; see
   `docs/GROUNDING.md`. 12 s budget, falls back to prompt-only hints.
 - **Events** (`POST /v1/events`): opt-in, strict allowlist, stored in `events`; optional PostHog

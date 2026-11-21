@@ -135,3 +135,20 @@ Rebuild and reload the extension.
 | 45 | `psql` check: `select count(*) from problem_summaries where summary ilike '%' || '<a distinctive phrase from a statement>' || '%';` | 0. No statement text is stored. | | |
 
 Record any failures in `docs/BLOCKERS.md`.
+
+---
+
+# Stage 5 manual checks (classifier, routing, observability)
+
+| # | Step | Expected | Pass/Fail | Notes |
+|---|------|----------|-----------|-------|
+| 46 | **Build the data** (see `ml/data/README.md`): `synth_problems.py --count 150 --yes`, `build_references.py` (needs Judge0 on a Linux host), `build_leak_dataset.py --yes`, then `validate_dataset.py`. | The validator prints `0 problem(s)` with at least 3,000 records. Tell me the counts. | | |
+| 47 | **Train on Modal** (needs a Modal account): follow the header of `ml/modal_train.py` (`modal run ml/modal_train.py`), then download the artifacts. | `model_card.json` exists with `t_low`, `t_high` and test metrics. Share it. | | |
+| 48 | Export: `cd ml && uv run python export/export_onnx.py --model-dir artifacts/classifier --data data/leak_dataset.jsonl --out artifacts/onnx` | Prints `export OK` (fp32 and int8 parity within tolerance, 0 formatting mismatches). | | |
+| 49 | Serve: set `APORIA_CLASSIFIER_DIR` to that folder, **clear the hint cache** (`redis-cli --scan --pattern 'hintcache:*' \| xargs redis-cli del`) and request a few hints. | `select guard_decision->>'path' from hints order by created_at desc limit 5` shows `classifier_pass` / `judge` / `classifier_block`. | | |
+| 50 | Compare the guards: `cd apps/api && APORIA_CLASSIFIER_DIR=../../ml/artifacts/onnx uv run python ../../evals/guard_compare/run.py` | `docs/results/guard.md` is replaced by real tables. Tell me what you see. | | |
+| 51 | Re-run the red-team gate with the cascade on: `pnpm eval:redteam --api ...` then `pnpm eval:gate` (see `evals/README.md`). | Gate PASS (guard-on leak rate 0). | | |
+| 52 | `docker compose -f infra/docker-compose.yml --profile observability up -d lgtm`, run the API with `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318`, request hints, open http://localhost:3000 and import `infra/grafana/aporia-dashboard.json`. | Five panels with data; tell me if any looks wrong. | | |
+| 53 | Set `APORIA_DAILY_BUDGET_USD=0.0001` with a paid model and request hints. | After the limit, hints are the fixed safe hints and the API log shows "daily LLM budget reached". | | |
+
+Record any failures in `docs/BLOCKERS.md`.

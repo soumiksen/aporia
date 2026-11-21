@@ -11,6 +11,7 @@ Stage plans: `docs/stages/stage0.md` to `stage6.md`. Work on one stage at a time
 - Dev API: `docker compose -f infra/docker-compose.yml up -d postgres redis` then `cd apps/api && uv run uvicorn app.main:app --reload`
 - Checks: `pnpm turbo run lint typecheck test build` ; `cd apps/api && uv run ruff check . && uv run pyright && uv run pytest`
 - Regenerate API types: `pnpm gen:api`
+- ML (heavy deps, own env): `cd ml && uv sync` ; smoke: `uv run python train/train_classifier.py --smoke` ; pure tests: `cd apps/api && uv run pytest ../../ml -q` (see ml/README.md)
 - Knowledge base: `cd apps/api && uv run python ../../scripts/validate_knowledge.py` ; ingest: `uv run python -m app.rag.ingest` (see docs/RAG.md)
 - Offline evals tests: `pnpm eval:test` ; red-team run (real keys, costs money): `pnpm eval:redteam` then `pnpm eval:gate`
 - Extension e2e: `pnpm --filter extension e2e` (needs `npx playwright install chromium` once)
@@ -22,6 +23,8 @@ Stage plans: `docs/stages/stage0.md` to `stage6.md`. Work on one stage at a time
 - Prompts are files in `apps/api/app/prompts/` with a version suffix; never inline long prompts in code.
 - Pure logic (ladder, stuck rules, shrinker, BKT, fusion) must have unit tests.
 - Untrusted code runs only through a `SandboxRunner` (Judge0), never in the API process.
+- Model weights, datasets and `ml/artifacts/` are never committed. No metric is written anywhere
+  unless a script produced it (placeholders say TODO).
 - Every reply passes the leak guard before it is shown; a guard error returns a safe hint, and a
   sandbox (grounding) error continues prompt-only, still guarded.
 - Conventional commits; one task per commit.

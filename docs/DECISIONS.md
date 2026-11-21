@@ -158,3 +158,50 @@
   2 GB model); retrieval metrics for `hybrid_rerank` stay empty until it is enabled.
 - The retrieval labels are drafts (`status = needs_human_label`); the report says so until every
   row is `labeled`.
+
+## Stage 5: classifier, cascade guard, routing, caching, observability
+- **`ml/` is its own uv project** (`ml/pyproject.toml`, Python 3.12) holding torch, transformers and
+  optimum, so `apps/api` stays light. The pure-Python parts (metrics, thresholds, dataset builder,
+  formatter parity) are tested from the API environment (`uv run pytest ../../ml`), the training
+  smoke test only in the `ml/` environment (`APORIA_RUN_SMOKE=1`).
+- **One formatter for training and serving**: `app/guard/classifier_format.py` builds
+  `[LEVEL] .. [PROBLEM] .. [REFERENCE] .. [REPLY] ..` and both sides import it. The reference part is
+  the solution functions only (`reference_text` drops `gen`, `validate`, `solve_brute`). A parity
+  test caught a real drift while this was built (training ignored the max length); the export script
+  also compares the API's `tokenizers` path with the `transformers` path on 200 records.
+- **Dataset**: leaky replies are labeled by construction (the model is told to leak) and filtered
+  for refusals and missing code; safe replies must pass the deterministic guard; red-team replies
+  are used only where the deterministic check and the judge agree. Classes are balanced inside each
+  (split, level) cell. Expect label noise. The `--smoke` data is templated text for plumbing only.
+- **Thresholds** (`ml/train/thresholds.py`): `t_low` = highest validation threshold with recall
+  >= 0.99, `t_high` = lowest with precision >= 0.95, plus `t_fpr5` (best recall at FPR <= 5%) as the
+  single operating point of `classifier_only`. Exactly `t_low` or `t_high` goes to the judge. If
+  `t_low >= t_high` (classes separate perfectly) both are set to `t_high` and the card says
+  `no_uncertain_band`.
+- **Export**: fp32 ONNX through `optimum`, then `onnxruntime` dynamic int8 quantization. Parity
+  tolerances are constants in `export_onnx.py` (fp32 1e-3, int8 0.25 logits) with the reasoning in
+  the file. Padding changes int8 outputs slightly because activations are scaled per batch (a test
+  allows 0.02 in probability).
+- **Cascade** (`app/guard/cascade.py`): heuristics, then classifier, then judge. A classifier fault
+  at request time uses the judge for that reply; missing artifacts mean the `prompted` mode (logged
+  once at WARNING). `guard_decision` records `path` and `classifier_p`. The classifier's inputs use
+  the stored concept summary and the verified reference; with no reference it sees an empty
+  `[REFERENCE]` (training always has one), which the real model has not been evaluated on.
+- **Routing**: a LiteLLM `Router` with groups `fast` (levels 1 and 2), `strong` (3 and 4, reference
+  building) and `judge`; fallbacks are env lists. Streaming calls and embeddings are not written to
+  `llm_calls` (a stream reports no usage; embedding cost is negligible here).
+- **Hint cache**: key `(slug, level, code hash, failing-case hash, prompt version)`, plus the device
+  hash when the student's own learner memory shaped the prompt. Bypassed for a student message, eval
+  switches or a disabled guard; safe-hint fallbacks are never cached. The key does not include the
+  guard mode, so a reply approved under one guard stays valid for up to the TTL after the guard
+  changes; clear `hintcache:*` in Redis when swapping the classifier.
+- **Budget guard**: today's summed `llm_calls.cost_usd` is read at most every 30 s; above
+  `APORIA_DAILY_BUDGET_USD` hints are safe hints with no model call. Local models cost $0, so it
+  never trips on Ollama.
+- **OpenTelemetry** is installed only when `OTEL_EXPORTER_OTLP_ENDPOINT` is set. Metric labels never
+  hold code, problem text or device ids. The Grafana dashboard was imported into a running
+  `grafana/otel-lgtm` and its queries returned data; how it looks is unverified.
+- **CI**: `redteam-gate` runs the offline red-team suite against the real app and applies the gate
+  to it; `classifier` runs the mocked wrapper, cascade and parity tests. Real-LLM evals and the
+  torch smoke test are manual workflows. The `classifier` uv group (onnxruntime, tokenizers) is a
+  default group so the wrapper tests can import numpy.

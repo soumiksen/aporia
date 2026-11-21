@@ -46,6 +46,15 @@
 - Per-session (not just per-page-load) limit for the "Were you actually stuck?" question.
 
 
+## Ideas parked during Stage 5
+- LoRA fine-tune of a small LLM as a second classifier (stretch in the stage plan).
+- Include the guard mode / classifier version in the hint cache key.
+- Log classifier probabilities per path to pick `t_low`/`t_high` from production, not only validation.
+- Per-device cost and rate budgets; a budget dashboard panel.
+- Record embedding calls in `llm_calls`; stream usage for the streaming path.
+- Active learning: send replies with p near the thresholds to human labeling.
+- Distil the judge's verdicts into extra training data (watch for label feedback loops).
+
 ## Ideas parked during Stage 4
 - Fit BKT parameters per concept with pyBKT once real attempt data exists (stage plan defers it).
 - FSRS-style review scheduling from `concept_mastery` (out of scope for Stage 4).
