@@ -65,7 +65,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 5.5 Cascade guard
 - [x] 5.6 Guard comparison
 - [x] 5.7 Routing, caching, and cost tracking
-- [ ] 5.8 Observability
+- [x] 5.8 Observability
 - [ ] 5.9 CI additions
 
 ## Stage 6: User study, hardening, launch

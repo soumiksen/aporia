@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any
@@ -61,6 +62,7 @@ from app.schemas.hint import (
     Source,
     TokenEvent,
 )
+from app.telemetry.metrics import get_metrics
 
 router = APIRouter(prefix="/v1")
 logger = logging.getLogger("aporia.hint")
@@ -136,6 +138,7 @@ async def post_hint(
         logger.error("%s", exc)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+    started = time.perf_counter()
     hint_id = str(uuid.uuid4())
     current_hint_id.set(hint_id)
     device = device_hash(device_id)
@@ -162,6 +165,15 @@ async def post_hint(
         info.reference,
         runner,
         total_budget_s=settings.grounding_budget_s,
+    )
+    get_metrics().observe_sandbox(
+        "error"
+        if grounding.error
+        else (
+            "failure_found"
+            if grounding.grounded
+            else ("no_failure" if grounding.attempted else "skipped")
+        )
     )
     grounding_text = render_for_prompt(grounding.context, level)
     failing_case = grounding.facts.as_dict() if grounding.facts else None
@@ -191,6 +203,12 @@ async def post_hint(
             )
         except Exception as exc:  # noqa: BLE001 - retrieval never blocks a hint
             logger.warning("retrieval failed: %s", type(exc).__name__)
+    if retriever and use_rag:
+        get_metrics().observe_retrieval("notes", len(context.notes))
+        if level == 4:
+            get_metrics().observe_retrieval("analogous", len(context.analogous))
+    if retriever and use_memory:
+        get_metrics().observe_retrieval("mistakes", len(context.mistakes))
     retrieval_text = context.render()
     metadata: dict[str, Any] = {"hint_id": hint_id, "level": level, "device_hash": device}
     logger.info(
@@ -212,7 +230,7 @@ async def post_hint(
         )
 
     async def check_draft(draft: str) -> GuardDecision:
-        return await cascade_check(
+        decision = await cascade_check(
             draft,
             level,
             body.problem,
@@ -224,6 +242,8 @@ async def post_hint(
             classifier=classifier,
             summary=info.summary,
         )
+        get_metrics().observe_guard(decision.path, decision.leaks)
+        return decision
 
     bypass = should_bypass(
         guard_on=guard_on,
@@ -312,6 +332,7 @@ async def post_hint(
                 failure_text=failure_text,
                 verdict=verdict if new_code else None,  # one BKT observation per distinct code
             )
+        get_metrics().observe_hint(time.perf_counter() - started, level, grounding.grounded)
         for chunk in chunk_text(result.text):
             yield sse("token", TokenEvent(text=chunk).model_dump_json())
         done = DoneEvent(

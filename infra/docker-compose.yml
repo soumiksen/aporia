@@ -66,6 +66,22 @@ services:
     env_file: ./judge0.conf
     restart: unless-stopped
 
+  # ---- Optional observability (Stage 5): docker compose --profile observability up -d ----
+  # Grafana's all-in-one OpenTelemetry LGTM image: Grafana (3000), an OTLP receiver
+  # (gRPC 4317, HTTP 4318), Prometheus, Tempo and Loki. Point the API at it with
+  # OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 and open http://localhost:3000.
+  lgtm:
+    image: grafana/otel-lgtm:latest
+    profiles: [observability]
+    ports:
+      - "3000:3000"
+      - "4317:4317"
+      - "4318:4318"
+    volumes:
+      - lgtm-data:/data
+    restart: unless-stopped
+
 volumes:
   pgdata:
   judge0-data:
+  lgtm-data:
