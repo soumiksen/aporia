@@ -58,7 +58,15 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 4.9 Retrieval evaluation
 
 ## Stage 5: Fine-tuning, performance, observability
-- [ ] (task IDs to be added from stage5.md)
+- [x] 5.1 Synthetic problem set
+- [ ] 5.2 Leak dataset builder
+- [ ] 5.3 Training code
+- [ ] 5.4 ONNX export and serving wrapper
+- [ ] 5.5 Cascade guard
+- [ ] 5.6 Guard comparison
+- [ ] 5.7 Routing, caching, and cost tracking
+- [ ] 5.8 Observability
+- [ ] 5.9 CI additions
 
 ## Stage 6: User study, hardening, launch
 - [ ] (task IDs to be added from stage6.md)

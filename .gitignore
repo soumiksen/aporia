@@ -20,3 +20,12 @@ test-results/
 playwright-report/
 evals/redteam/results/*.json
 evals/retrieval/results/
+
+# ml: generated data and artifacts (model weights, datasets) are never committed
+ml/data/problems/*.json
+ml/data/references/*.json
+ml/data/leak_dataset.jsonl
+ml/artifacts/
+ml/.venv/
+*.onnx
+*.safetensors
