@@ -11,6 +11,7 @@ Stage plans: `docs/stages/stage0.md` to `stage6.md`. Work on one stage at a time
 - Dev API: `docker compose -f infra/docker-compose.yml up -d postgres redis` then `cd apps/api && uv run uvicorn app.main:app --reload`
 - Checks: `pnpm turbo run lint typecheck test build` ; `cd apps/api && uv run ruff check . && uv run pyright && uv run pytest`
 - Regenerate API types: `pnpm gen:api`
+- Knowledge base: `cd apps/api && uv run python ../../scripts/validate_knowledge.py` ; ingest: `uv run python -m app.rag.ingest` (see docs/RAG.md)
 - Offline evals tests: `pnpm eval:test` ; red-team run (real keys, costs money): `pnpm eval:redteam` then `pnpm eval:gate`
 - Extension e2e: `pnpm --filter extension e2e` (needs `npx playwright install chromium` once)
 
@@ -35,3 +36,5 @@ Stage plans: `docs/stages/stage0.md` to `stage6.md`. Work on one stage at a time
 5. Failing safe: if the leak guard errors, return a deterministic safe hint, not a raw model reply.
    If grounding (the sandbox) errors, continue prompt-only: the reply is still generated and guarded.
 6. The expected output and the reference code never reach the hint generator, only the guard.
+7. Learner data (mastery, mistakes, problem summaries) is keyed by the device hash and holds no
+   code and no problem statement text. Study notes are background, never quoted as the answer.

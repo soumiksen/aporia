@@ -45,3 +45,13 @@
 - Real Judge0 on Linux in CI so the sandbox integration test and grounding run for real.
 - Per-session (not just per-page-load) limit for the "Were you actually stuck?" question.
 
+
+## Ideas parked during Stage 4
+- Fit BKT parameters per concept with pyBKT once real attempt data exists (stage plan defers it).
+- FSRS-style review scheduling from `concept_mastery` (out of scope for Stage 4).
+- Record one mistake per concept of the problem, not only the primary concept.
+- Tune `MISTAKE_SIMILARITY_THRESHOLD` and the note count from the labeled retrieval set.
+- Chunk-level (not concept-level) relevance labels for the retrieval eval.
+- Make the hint-quality eval run against more than 30 cases and report confidence intervals.
+- Per-device opt-out and "forget my learner data" endpoint (needed for the Stage 6 privacy page).
+- Evaluate `BAAI/bge-reranker-v2-m3` once the optional `rerank` group is installed.

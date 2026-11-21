@@ -113,3 +113,25 @@ manifest now also requests the `idle` permission, so Chrome may ask you to re-ap
 
 Record any failures in `docs/BLOCKERS.md`.
 
+
+---
+
+# Stage 4 manual checks (notes, memory, labels)
+
+Start the API with `APORIA_EMBEDDING_MODEL` set (Ollama: `ollama pull nomic-embed-text`, then
+`APORIA_EMBEDDING_MODEL=ollama/nomic-embed-text`), run `cd apps/api && uv run alembic upgrade head`
+and `uv run python -m app.rag.ingest`, and start the Arq worker (`uv run arq app.worker.WorkerSettings`).
+Rebuild and reload the extension.
+
+| # | Step | Expected | Pass/Fail | Notes |
+|---|------|----------|-----------|-------|
+| 38 | **Review the notes.** Read `knowledge/notes/*.md` (40 files). Fix anything wrong, then `cd apps/api && uv run python ../../scripts/mark_reviewed.py <slug> ...` (or `--list` to see progress). | Every note you checked says `reviewed: true`. Tell me which ones were inaccurate. | | |
+| 39 | **Review the retrieval labels.** Open `evals/retrieval/pairs.csv` (115 draft queries). Correct `relevant_slugs` and set `status` to `labeled`, then `uv run python ../../evals/retrieval/run.py`. | `docs/results/retrieval.md` no longer says "Provisional". | | |
+| 40 | Open a problem you have never opened, request a hint, wait ~30 s. | `select slug, concepts, needs_review from problem_summaries;` has a row with 1 to 3 concepts. The summary is in different words from the statement and has no examples. | | |
+| 41 | Request a level-2 hint on that problem. | The panel shows small "Based on" chips (concept and section). The hint uses them as background and does not quote them. | | |
+| 42 | With Judge0 working (Linux), fail a problem with a wrong answer, ask for a hint, then open a different problem with the same kind of bug and ask again. | `select description from mistakes;` shows a one-sentence description with no code. The second hint may say "last time you had trouble with ...", at most once. | | |
+| 43 | Submit an accepted solution to a problem you failed earlier. | `select concept_slug, p_known, n_obs from concept_mastery;` shows mastery rising; that problem's mistakes show `resolved = true`. | | |
+| 44 | Ask for a level-4 hint (after 1 to 3). | A worked example of a **new** small problem on the same ideas; it is not your problem renamed. | | |
+| 45 | `psql` check: `select count(*) from problem_summaries where summary ilike '%' || '<a distinctive phrase from a statement>' || '%';` | 0. No statement text is stored. | | |
+
+Record any failures in `docs/BLOCKERS.md`.

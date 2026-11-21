@@ -1,0 +1,116 @@
+query_id,query,relevant_slugs,status
+q001,I keep scanning the whole list again for every item and it times out,hash-map-lookup,needs_human_label
+q002,how do I remember which values I have already seen while looping once,hash-map-lookup,needs_human_label
+q003,find whether any earlier element matches a property of the current one without a second loop,hash-map-lookup|complexity-analysis,needs_human_label
+q004,my counts are wrong because a missing key crashes the lookup,frequency-counting|hash-map-lookup,needs_human_label
+q005,check whether two words contain the same letters in any order,frequency-counting|string-manipulation,needs_human_label
+q006,report the item that occurs most often in a collection,frequency-counting,needs_human_label
+q007,range totals are slow because I add up the same stretch for every query,prefix-sums,needs_human_label
+q008,my running total is off by one at the very first position,prefix-sums|edge-case-reasoning,needs_human_label
+q009,count stretches whose total equals a target using earlier running totals,prefix-sums|hash-map-lookup,needs_human_label
+q010,I sorted the data but lost the original positions I need for the answer,sorting,needs_human_label
+q011,does ordering the items first make neighbours easy to compare,sorting,needs_human_label
+q012,my custom comparison gives inconsistent results,sorting,needs_human_label
+q013,two pointers moving inward skip a valid pair,two-pointers,needs_human_label
+q014,which pointer should I move when the sum is too large,two-pointers,needs_human_label
+q015,remove duplicates in place from an ordered list using a read and write position,two-pointers|invariants,needs_human_label
+q016,my window shrinks too early and I lose the best answer,sliding-window,needs_human_label
+q017,longest stretch of characters with no repeats,sliding-window|string-manipulation,needs_human_label
+q018,"when should I record the best length, before or after fixing the window",sliding-window,needs_human_label
+q019,my window logic breaks when values can be negative,sliding-window|prefix-sums,needs_human_label
+q020,my loop never ends because the range does not shrink,binary-search-index|invariants,needs_human_label
+q021,should the upper bound be inclusive or one past the end,binary-search-index|invariants,needs_human_label
+q022,find the first position where a condition becomes true in ordered data,binary-search-index,needs_human_label
+q023,search for the smallest capacity that still works,binary-search-answer,needs_human_label
+q024,I do not know what to binary search on since there is no sorted array,binary-search-answer,needs_human_label
+q025,my feasibility check is not monotonic so the search lands in the wrong place,binary-search-answer,needs_human_label
+q026,check if brackets are balanced,stack,needs_human_label
+q027,my stack throws an error on the first closing bracket,stack|edge-case-reasoning,needs_human_label
+q028,undo the most recent step when a rule is broken,stack,needs_human_label
+q029,for each day find how long until a warmer one,monotonic-stack,needs_human_label
+q030,next greater element for every item in one pass,monotonic-stack,needs_human_label
+q031,equal values are handled wrongly when popping from my stack,monotonic-stack|edge-case-reasoning,needs_human_label
+q032,maximum of every window of fixed size quickly,monotonic-queue|sliding-window,needs_human_label
+q033,my deque keeps expired positions at the front,monotonic-queue,needs_human_label
+q034,I lose the rest of the list when I change a next link,linked-list-manipulation,needs_human_label
+q035,reverse a chain of nodes without extra memory,linked-list-manipulation,needs_human_label
+q036,an empty list crashes my node code,linked-list-manipulation|edge-case-reasoning,needs_human_label
+q037,detect whether a chain of nodes loops back on itself,fast-slow-pointers,needs_human_label
+q038,find the middle node in a single pass,fast-slow-pointers,needs_human_label
+q039,my fast pointer steps onto a missing node,fast-slow-pointers|edge-case-reasoning,needs_human_label
+q040,my recursion never terminates,recursion-base-cases,needs_human_label
+q041,what should the function return for an empty input in the recursive version,recursion-base-cases,needs_human_label
+q042,how do I trust the smaller call to return the right thing,recursion-base-cases,needs_human_label
+q043,compute the height of a tree,tree-dfs,needs_human_label
+q044,sum along every root to leaf route,tree-dfs,needs_human_label
+q045,the parent needs two facts from each subtree and I only return one,tree-dfs,needs_human_label
+q046,print the nodes of a tree one generation at a time,tree-bfs,needs_human_label
+q047,my level sizes come out wrong because the queue grows while I count,tree-bfs,needs_human_label
+q048,the rightmost node at every depth of a tree,tree-bfs|tree-dfs,needs_human_label
+q049,my check for a valid ordered tree only compares a node with its children,bst-properties,needs_human_label
+q050,what do I know about the order of an inorder walk,bst-properties|tree-dfs,needs_human_label
+q051,find the next larger value in an ordered tree,bst-properties,needs_human_label
+q052,keep the top k values of a stream,heap-priority-queue,needs_human_label
+q053,I need the smallest item repeatedly while new items arrive,heap-priority-queue,needs_human_label
+q054,my heap gives the largest when I wanted the smallest,heap-priority-queue,needs_human_label
+q055,count separate groups of connected nodes,graph-dfs,needs_human_label
+q056,my search visits the same node many times,graph-dfs|graph-bfs,needs_human_label
+q057,how do I tell a route in progress from a node I finished,graph-dfs,needs_human_label
+q058,fewest moves from a start to a goal when every move costs the same,graph-bfs,needs_human_label
+q059,spread outward from several starting cells at once,graph-bfs|matrix-traversal,needs_human_label
+q060,my queue fills with duplicates of the same node,graph-bfs,needs_human_label
+q061,order tasks so every prerequisite comes first,topological-sort,needs_human_label
+q062,decide whether all courses can be finished given requirements,topological-sort|graph-dfs,needs_human_label
+q063,fewer nodes came out than exist in my ordering,topological-sort,needs_human_label
+q064,are two items already connected after adding links,union-find,needs_human_label
+q065,count how many groups remain as links arrive,union-find,needs_human_label
+q066,does adding this link close a cycle,union-find|graph-dfs,needs_human_label
+q067,cheapest route when edges have different costs,shortest-path,needs_human_label
+q068,my shortest path answer is wrong when a longer route is cheaper,shortest-path|graph-bfs,needs_human_label
+q069,priority queue with outdated entries in a weighted search,shortest-path|heap-priority-queue,needs_human_label
+q070,count islands in a grid of land and water,matrix-traversal|graph-dfs,needs_human_label
+q071,my grid code mixes up rows and columns,matrix-traversal,needs_human_label
+q072,walk a matrix in a spiral without leaving the bounds,matrix-traversal|edge-case-reasoning,needs_human_label
+q073,list every arrangement that satisfies a rule,backtracking,needs_human_label
+q074,my results change after I record them because I stored the working list,backtracking,needs_human_label
+q075,I generate the same subset in different orders,backtracking,needs_human_label
+q076,my recursion repeats the same subproblem and is too slow,memoization|recursion-base-cases,needs_human_label
+q077,what should the cache key include,memoization,needs_human_label
+q078,convert top down caching into a table,memoization|dp-1d,needs_human_label
+q079,I cannot decide what a table entry means,dp-state-definition,needs_human_label
+q080,my recurrence needs information that is not in my state,dp-state-definition,needs_human_label
+q081,best total without taking neighbouring items,dp-state-definition|dp-1d,needs_human_label
+q082,count the ways to reach a position using steps of one or two,dp-1d,needs_human_label
+q083,which earlier entries does the current entry use,dp-1d,needs_human_label
+q084,my first table values are wrong and everything after is off,dp-1d|edge-case-reasoning,needs_human_label
+q085,compare two strings with a grid of answers,dp-2d|string-manipulation,needs_human_label
+q086,I fill my table in an order that reads cells before they exist,dp-2d,needs_human_label
+q087,keeping only one row overwrites something I still need,dp-2d,needs_human_label
+q088,form an amount from available coin values,dp-knapsack,needs_human_label
+q089,each item may be used once but my table reuses it,dp-knapsack,needs_human_label
+q090,split a set into two groups with equal totals,dp-knapsack,needs_human_label
+q091,my locally best choice gives a worse total on a small case,greedy,needs_human_label
+q092,which talk should I schedule first to fit the most,greedy|intervals,needs_human_label
+q093,how do I know a greedy rule is safe,greedy,needs_human_label
+q094,merge ranges that overlap,intervals,needs_human_label
+q095,do touching endpoints count as overlapping,intervals|edge-case-reasoning,needs_human_label
+q096,minimum number of rooms for overlapping meetings,intervals|heap-priority-queue,needs_human_label
+q097,find the one number that appears once while the rest appear twice,bit-manipulation,needs_human_label
+q098,how do I check or flip a single bit,bit-manipulation,needs_human_label
+q099,my shift gives a strange result for negative numbers,bit-manipulation,needs_human_label
+q100,only the remainder matters but my numbers overflow,math-number-theory,needs_human_label
+q101,test whether a number has a factor without looping to the number itself,math-number-theory|complexity-analysis,needs_human_label
+q102,remainder of a negative number behaves differently than I expected,math-number-theory|edge-case-reasoning,needs_human_label
+q103,reads the same backwards after ignoring spaces and case,string-manipulation|two-pointers,needs_human_label
+q104,joining strings in a loop is slow,string-manipulation|complexity-analysis,needs_human_label
+q105,check which words start with a given prefix quickly,tries,needs_human_label
+q106,store many words so shared beginnings are reused,tries,needs_human_label
+q107,split the input in halves and combine the answers,divide-and-conquer,needs_human_label
+q108,what has to be handled by the combine step,divide-and-conquer,needs_human_label
+q109,will my solution be fast enough for a hundred thousand items,complexity-analysis,needs_human_label
+q110,how do I count the cost of a loop that calls a library function,complexity-analysis,needs_human_label
+q111,it passes the examples but fails on hidden tests,edge-case-reasoning,needs_human_label
+q112,what inputs should I try by hand before submitting,edge-case-reasoning,needs_human_label
+q113,my loop runs one time too many,edge-case-reasoning|invariants,needs_human_label
+q114,what should be true at the top of every pass of my loop,invariants,needs_human_label
+q115,my index changes meaning halfway through the loop,invariants|edge-case-reasoning,needs_human_label

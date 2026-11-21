@@ -124,3 +124,37 @@
   page and are not collected). The background worker is a module worker so the Sentry SDK ships as
   a lazily loaded chunk that DSN-less builds never load.
 
+
+## Stage 4: learner model, semantic search and RAG
+- **Learner data is server-side, keyed by the anonymous device hash** (this differs from the earlier
+  local-first plan, because retrieval needs pgvector). `concept_mastery` holds concept ids and BKT
+  numbers; `mistakes` holds a concept id, one sentence and an embedding; `problem_summaries` holds
+  the slug, tags, an own-words summary and an embedding. **No code and no statement text** is
+  stored in any of them or in `events`. To be restated in `docs/PRIVACY.md` (Stage 6).
+- `POST /v1/attempts` (slug + verdict, no code) and the hint endpoint feed BKT. The attempts call is
+  functional, not telemetry, so it is not gated by the consent card (it carries no code and is
+  keyed by the same device id as every hint request). A failed observation is counted once per
+  distinct code hash, so asking for the same hint repeatedly does not drive mastery down.
+- **Migration is `0005_rag_learner`** (the plan says 0004, which `events` already took). The `tsv`
+  generated columns exist only in the migration; the models omit them so they run on the SQLite
+  unit-test database, and full-text SQL uses `literal_column("<table>.tsv")`.
+- **EMBED_DIM = 1536** everywhere. Provider vectors with fewer dimensions are zero-padded (cosine
+  unchanged); more dimensions is an error. The dev setup uses Ollama `nomic-embed-text` (768
+  dimensions, padded).
+- Full-text queries are `websearch_to_tsquery` over the query words joined with `or`, because a
+  student-style sentence rarely contains every term and the default AND would match nothing.
+- RRF ties break by the best rank any list gave, then first appearance. Retrieval metrics rank
+  **concepts** (chunks of one note count once).
+- Mistake descriptions are generated **deterministically** from the failure kind and the minimal
+  failing input (`describe_failure`), not by an LLM: it cannot leak code and needs no model call.
+  One mistake is stored against the problem's primary (first) concept.
+- Summaries that copy 8 consecutive words of the statement are rejected like an invalid slug and
+  are never stored. After two invalid answers the summary is stored with no concepts and
+  `needs_review = true`.
+- Prompts `hint_l*_v3` are the default (`APORIA_PROMPT_VERSION`); `guard_judge_v3` adds the level 4
+  "must not be the student's problem or a re-skin" rule. The guard also gets two deterministic
+  checks: `quotes_source` and `restates_problem`.
+- The reranker is **off** and not installed by default (the `rerank` uv group downloads torch and a
+  2 GB model); retrieval metrics for `hybrid_rerank` stay empty until it is enabled.
+- The retrieval labels are drafts (`status = needs_human_label`); the report says so until every
+  row is `labeled`.

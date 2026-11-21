@@ -30,7 +30,9 @@ aporia/
 - **Gateway**: JWT auth, Redis rate limiting, Pydantic v2 validation, SSE streaming.
 - **Orchestrator**: hint-level state machine (ladder L1-L4), learner-model read/write, context
   assembly, versioned prompt files.
-- **Retrieval**: Postgres FTS + pgvector (HNSW), fused by RRF, cross-encoder rerank.
+- **Retrieval** (`app/rag/`): Postgres FTS + pgvector (HNSW), fused by RRF, optional cross-encoder
+  rerank; concept notes, problem summaries and the learner model (`app/learner/`) feed hints as
+  `<notes>`, `<past_mistakes>` and `<analogous_problems>`. See `docs/RAG.md`.
 - **Execution**: Arq worker on Redis; differential tests and a failing-input shrinker against
   Judge0 through a `SandboxRunner` interface.
 - **LLM gateway**: LiteLLM routing/fallback/caching; structured output via Instructor.
