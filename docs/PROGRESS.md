@@ -48,8 +48,8 @@ Replace each heading with its task IDs when those stage files are added to `docs
 
 ## Stage 4: Learner model, semantic search, and RAG
 - [x] 4.1 Schema
-- [ ] 4.2 Concept taxonomy
-- [ ] 4.3 Concept notes (original content)
+- [x] 4.2 Concept taxonomy
+- [x] 4.3 Concept notes (original content)
 - [ ] 4.4 Embeddings and ingestion
 - [ ] 4.5 Problem summaries and tagging
 - [ ] 4.6 Hybrid retrieval
