@@ -55,7 +55,7 @@ Replace each heading with its task IDs when those stage files are added to `docs
 - [x] 4.6 Hybrid retrieval
 - [x] 4.7 Learner model
 - [x] 4.8 Use retrieval and learner data in hints
-- [ ] 4.9 Retrieval evaluation
+- [x] 4.9 Retrieval evaluation
 
 ## Stage 5: Fine-tuning, performance, observability
 - [ ] (task IDs to be added from stage5.md)
@@ -243,3 +243,53 @@ problem text is ever stored in it.
 - Red-team results measured on the Stage 2 prompts (v1) are not comparable with v2 prompts; rerun
   the suite with `APORIA_PROMPT_VERSION=v1` for a like-for-like comparison, or re-baseline.
 
+
+## Stage 4 hand-off notes
+
+### What was built
+- Schema (migration `0005_rag_learner`; the plan said 0004, which `events` took), taxonomy (40
+  concepts), 40 original notes (`reviewed: false`), embedder + ingestion, problem summaries, hybrid
+  retrieval, BKT learner model, mistakes, `POST /v1/attempts`, hint integration (`<notes>`,
+  `<past_mistakes>`, `<analogous_problems>`, `done.sources`, "Based on" chips), retrieval eval and a
+  hint-quality harness. Design and switches: `docs/RAG.md`.
+
+### Embedding model and reranker (as actually used)
+- Embedding model: Ollama `nomic-embed-text` (`APORIA_EMBEDDING_MODEL=ollama/nomic-embed-text`),
+  768 dimensions zero-padded to `EMBED_DIM = 1536`. 85 chunks from 40 notes.
+- Reranker: **not enabled** (`APORIA_RERANK` unset, the optional `rerank` uv group is declared but
+  not installed; it pulls torch and a 2 GB model). `hybrid_rerank` has no numbers yet.
+
+### Retrieval metrics (115 draft queries, labels NOT yet reviewed: provisional)
+| mode | P@3 | P@5 | R@5 | MRR | p50 ms | p95 ms |
+|---|---|---|---|---|---|---|
+| vector | 0.345 | 0.217 | 0.861 | 0.774 | 25 | 33 |
+| fts | 0.310 | 0.212 | 0.848 | 0.800 | 4 | 5 |
+| hybrid | 0.351 | 0.223 | 0.878 | 0.867 | 7 | 9 |
+Hybrid beats either alone on every metric. P@k is capped by queries having only one or two relevant
+concepts. Full table: `docs/results/retrieval.md`. **The user must review `pairs.csv` labels** (all
+rows are `needs_human_label`) before these are treated as final.
+
+### Hint quality, RAG and memory on/off (30 synthetic cases, 120 replies)
+Judge and generator are both the local qwen3.5 9B, so this is weak evidence. Scores are 4.7 to 5.0
+in every condition (a ceiling effect) and the differences (<= 0.1) are noise: RAG and memory did not
+measurably change quality here. `docs/results/hint_quality.md`. All 30 RAG replies carried sources.
+
+### Verified
+- Unit/integration: 398 API tests pass (plus the `-m db` Postgres paths when pointed at the compose
+  database), 49 evals tests, 156 extension tests, 14 Playwright e2e tests, lint/typecheck/build.
+- Real end to end on the dev stack: a new problem got a worker-written summary (2 valid concepts,
+  vector stored, no statement text) and the next hints carried `sources`.
+
+### Not verified / needs the user
+- **Notes accuracy review** (40 files) and the retrieval labels: manual checks 38 and 39.
+- Learner flows on a live site (accepted-submission reporting, past-mistake recall, BKT updates):
+  manual checks 40 to 45. Mistake recall needs Judge0 (a grounded failure), which this Mac lacks.
+- **The red-team gate has not been re-run on Stage 4 code.** Notes and past mistakes enter the
+  prompt, and one real level-2 hint ("shrink the left side of your current stretch ...") named the
+  approach and still passed the local 9B judge. Re-run `pnpm eval:redteam` then `pnpm eval:gate`
+  against the new code before relying on the guard numbers.
+- Level-4 worked-example "is a new problem" is enforced by a prompt rule, an 8-word statement
+  overlap heuristic and the judge; it has not been red-teamed with real models.
+
+### Notes the user flagged as inaccurate
+None yet (the notes have not been reviewed).
